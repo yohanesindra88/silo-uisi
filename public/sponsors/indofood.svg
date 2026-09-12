@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+      <rect x="5" y="10" width="180" height="40" rx="8" fill="#00529B" />
+      <path d="M 5 30 Q 95 10 185 30 Q 95 50 5 30" fill="#E31E24" opacity="0.8" />
+      <text x="95" y="38" font-family="'Poppins', sans-serif" font-weight="900" font-size="20" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">Indofood</text>
+    </svg>

@@ -1,0 +1,413 @@
+/* ===== MERCH CAROUSEL — Katalog Toko Style ===== */
+
+.wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+/* ===== Section Header ===== */
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.collectionLabel {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--lp-ocean-blue);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.sectionTitle {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--lp-charcoal);
+  margin: 0.25rem 0 0.6rem;
+  letter-spacing: -0.03em;
+}
+
+.sectionDesc {
+  font-size: 0.95rem;
+  color: rgba(31, 75, 93, 0.6);
+  margin: 0;
+}
+
+/* ===== Carousel Area ===== */
+.carouselArea {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+/* ===== Arrow Buttons ===== */
+.arrowBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(31, 75, 93, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--lp-ocean-blue);
+  box-shadow: 0 4px 16px rgba(31, 75, 93, 0.08);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.arrowBtn:hover {
+  background: var(--lp-ocean-blue);
+  color: white;
+  border-color: var(--lp-ocean-blue);
+  box-shadow: 0 8px 24px rgba(31, 75, 93, 0.25);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.arrowLeft {
+  left: 0;
+}
+
+.arrowRight {
+  right: 0;
+}
+
+/* ===== Track ===== */
+.track {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  margin: 0 auto;
+  perspective: 1200px;
+}
+
+/* ===== Card ===== */
+.card {
+  width: 220px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(31, 75, 93, 0.06);
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer;
+  border: 1px solid rgba(31, 75, 93, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  box-shadow: 0 12px 32px rgba(31, 75, 93, 0.12);
+}
+
+.cardCenter {
+  width: 260px;
+  box-shadow: 0 16px 48px rgba(31, 75, 93, 0.15), 0 0 0 1px rgba(104, 207, 235, 0.2);
+}
+
+.cardCenter:hover {
+  box-shadow: 0 20px 56px rgba(31, 75, 93, 0.2), 0 0 0 1px rgba(104, 207, 235, 0.35);
+}
+
+/* ===== Card Image Area ===== */
+.cardImageArea {
+  position: relative;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.cardCenter .cardImageArea {
+  height: 220px;
+}
+
+/* ===== Badge ===== */
+.badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.badge_new {
+  background: rgba(31, 75, 93, 0.12);
+  color: var(--lp-ocean-blue);
+}
+
+.badge_trending {
+  background: rgba(104, 207, 235, 0.15);
+  color: #1a8bab;
+}
+
+.badge_best {
+  background: var(--lp-ocean-blue);
+  color: white;
+}
+
+.badge_popular {
+  background: rgba(104, 207, 235, 0.2);
+  color: var(--lp-ocean-blue);
+}
+
+/* ===== Heart Button ===== */
+.heartBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(31, 75, 93, 0.4);
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.heartBtn:hover {
+  color: #e74c3c;
+  background: rgba(255, 255, 255, 0.95);
+  transform: scale(1.15);
+}
+
+/* ===== Product Icon ===== */
+.productIcon {
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  filter: drop-shadow(0 8px 16px rgba(31, 75, 93, 0.15));
+}
+
+.card:hover .productIcon {
+  transform: translateY(-6px) scale(1.05);
+}
+
+/* ===== Card Body ===== */
+.cardBody {
+  padding: 1.1rem 1.2rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.cardCenter .cardBody {
+  padding: 1.3rem 1.4rem 1.5rem;
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--lp-charcoal);
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.01em;
+}
+
+.cardCenter .cardTitle {
+  font-size: 1.1rem;
+}
+
+.cardDesc {
+  font-size: 0.78rem;
+  color: rgba(31, 30, 25, 0.5);
+  margin: 0 0 0.6rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===== Rating ===== */
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.ratingValue {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--lp-charcoal);
+}
+
+.ratingCount {
+  font-size: 0.75rem;
+  color: rgba(31, 30, 25, 0.4);
+}
+
+/* ===== Price Row ===== */
+.priceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  gap: 0.5rem;
+}
+
+.price {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--lp-ocean-blue);
+}
+
+.cardCenter .price {
+  font-size: 1.2rem;
+}
+
+/* ===== Add to Cart Button ===== */
+.addToCartBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--lp-ocean-blue);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(31, 75, 93, 0.2);
+}
+
+.addToCartBtn:hover {
+  background: var(--lp-aqua);
+  color: var(--lp-charcoal);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(104, 207, 235, 0.35);
+}
+
+/* ===== Dot Indicators ===== */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(31, 75, 93, 0.15);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 0;
+}
+
+.dot:hover {
+  background: rgba(31, 75, 93, 0.3);
+}
+
+.dotActive {
+  background: var(--lp-ocean-blue);
+  width: 28px;
+  border-radius: 999px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .track {
+    padding: 2rem 2.5rem;
+    gap: 1rem;
+  }
+
+  .card {
+    flex: 0 0 190px;
+  }
+
+  .cardCenter {
+    flex: 0 0 230px;
+  }
+}
+
+@media (max-width: 768px) {
+  .track {
+    padding: 1rem 3rem;
+    gap: 0.75rem;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
+  }
+
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card {
+    flex: 0 0 70%;
+    scroll-snap-align: center;
+  }
+
+  .cardCenter {
+    flex: 0 0 75%;
+  }
+
+  .arrowBtn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .arrowLeft {
+    left: 2px;
+  }
+
+  .arrowRight {
+    right: 2px;
+  }
+
+  .sectionTitle {
+    font-size: 1.6rem;
+  }
+
+  .cardImageArea {
+    height: 160px;
+  }
+
+  .cardCenter .cardImageArea {
+    height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    flex: 0 0 85%;
+  }
+
+  .cardCenter {
+    flex: 0 0 88%;
+  }
+
+  .arrowBtn {
+    display: none;
+  }
+}

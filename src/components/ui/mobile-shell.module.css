@@ -1,0 +1,101 @@
+/* Mobile Shell - 100% Full Width Edge-to-Edge pada Semua HP & Tablet (Sesuai Gambar 2) */
+
+.wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: transparent;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.frame {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.frameWide {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  padding-top: max(14px, env(safe-area-inset-top, 14px));
+  background-color: rgba(250, 250, 250, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(31, 75, 93, 0.08);
+  box-sizing: border-box;
+}
+
+.main {
+  flex: 1 0 auto;
+  width: 100%;
+  padding: 18px 16px;
+  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.mainNoNav {
+  padding-bottom: max(28px, env(safe-area-inset-bottom, 28px));
+}
+
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 68px;
+  background-color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(31, 75, 93, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+
+.bottomNavWide {
+  width: 100%;
+}
+
+/* Hanya untuk Desktop / Monitor Besar (>= 1200px) agar kartu tidak melebar ekstrem */
+@media (min-width: 1200px) {
+  .frame {
+    max-width: 800px !important;
+    margin: 0 auto;
+  }
+  .bottomNav {
+    max-width: 800px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

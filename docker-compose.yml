@@ -1,0 +1,180 @@
+# =============================================================================
+# SILO UISI — stack produksi self-managed
+#
+#   cloudflared ──(outbound QUIC)──> Cloudflare Edge ──> DNS proxy (orange cloud)
+#        │
+#        └── http://app:3000 ── app (Next.js standalone) ── postgres
+#
+# Tidak ada port yang di-publish ke host: satu-satunya jalan masuk dari internet
+# adalah Cloudflare Tunnel, yang bersifat outbound-only. Tidak perlu membuka
+# firewall, port-forward, atau IP publik.
+#
+#   docker compose --env-file .env up -d --build
+# =============================================================================
+
+name: silo-uisi
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Database — hanya terjangkau dari network internal (tanpa akses internet)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17.11-alpine3.23
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER wajib di-set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD wajib di-set}
+      POSTGRES_DB: ${POSTGRES_DB:-silo_uisi}
+      # Percaya hanya pada scram-sha-256, bukan trust/md5.
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: ${TZ:-Asia/Jakarta}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEMORY_LIMIT:-1g}
+
+  # ---------------------------------------------------------------------------
+  # Migrasi schema — one-shot, harus sukses sebelum app boleh start
+  # ---------------------------------------------------------------------------
+  migrate:
+    build:
+      context: .
+      target: migrator
+    image: silo-uisi-migrate:latest
+    restart: "no"
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-silo_uisi}?schema=public&connection_limit=5
+      # Set true HANYA untuk mengisi data awal. Seeder bersifat destruktif
+      # terhadap sebagian data — jangan biarkan true di lingkungan produksi.
+      RUN_SEED: ${RUN_SEED:-false}
+      TZ: ${TZ:-Asia/Jakarta}
+    networks:
+      - internal
+
+  # ---------------------------------------------------------------------------
+  # Aplikasi Next.js
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      target: runner
+      args:
+        # NEXT_PUBLIC_* di-inline saat build — ubah nilai = wajib rebuild image.
+        NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:-}
+        NEXT_PUBLIC_CLOUDINARY_FOLDER: ${NEXT_PUBLIC_CLOUDINARY_FOLDER:-}
+    image: silo-uisi-app:latest
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      TZ: ${TZ:-Asia/Jakarta}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-silo_uisi}?schema=public&connection_limit=10&pool_timeout=20
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET wajib di-set}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-}
+      # Penyimpanan media milik sendiri (bind mount dari host).
+      MEDIA_ROOT: /app/storage/media
+      MEDIA_MAX_BYTES: ${MEDIA_MAX_BYTES:-8388608}
+    volumes:
+      # Cache ISR & Image Optimization — dipertahankan lintas restart.
+      - nextcache:/app/.next/cache
+      # Media hasil upload user. Sengaja memakai sintaks panjang dengan
+      # create_host_path: false — bentuk pendek ("- /srv/...:/app/...") diam-diam
+      # membuat direktori milik root bila path salah, yang memunculkan gejala
+      # membingungkan "situs tampil normal tapi semua upload 500 EACCES".
+      # Direktori host WAJIB dimiliki uid 1000:
+      #   sudo mkdir -p /srv/silo/media && sudo chown -R 1000:1000 /srv/silo/media
+      - type: bind
+        source: ${MEDIA_HOST_DIR:?MEDIA_HOST_DIR wajib di-set, mis. /srv/silo/media}
+        target: /app/storage/media
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    # Tidak ada `ports:` — akses publik hanya lewat cloudflared. Untuk debug
+    # lokal, jalankan: docker compose port app 3000, atau buka sementara:
+    # ports:
+    #   - "127.0.0.1:3000:3000"
+    networks:
+      - internal
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: ${APP_MEMORY_LIMIT:-1g}
+
+  # ---------------------------------------------------------------------------
+  # Cloudflare Tunnel — menghubungkan app ke DNS proxy Cloudflare
+  # ---------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.1
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN wajib di-set}
+      TZ: ${TZ:-Asia/Jakarta}
+    # --no-autoupdate: versi image yang menentukan, bukan self-update runtime.
+    # --metrics: endpoint /ready & /metrics pada port 2000 (internal saja).
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 run
+    # cloudflared hanya perlu menjangkau "app" dan internet keluar — tidak
+    # perlu akses langsung ke database.
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: ${CLOUDFLARED_MEMORY_LIMIT:-256m}
+
+networks:
+  # internal: true -> tidak ada rute ke internet. Database tidak bisa dihubungi
+  # dari luar host maupun menghubungi luar.
+  internal:
+    internal: true
+  edge:
+    driver: bridge
+
+volumes:
+  pgdata:
+  nextcache:

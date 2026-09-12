@@ -1,0 +1,220 @@
+generator client {
+  provider      = "prisma-client-js"
+  // "native" untuk dev di host, "linux-musl-openssl-3.0.x" untuk image Alpine di Docker.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Tabel: m_groups (Data Kelompok)
+model Group {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(45)
+  description String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  users           User[]
+  mentors         GroupMentor[]
+  attendances     Attendance[]
+  attributeChecks AttributeCheck[]
+
+  @@map("m_groups")
+}
+
+// 2. Tabel: m_sessions (Sesi Absensi / Kegiatan)
+model Session {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(45)
+  startSessions DateTime  @map("start_sessions") @db.Timestamp(6)
+  endSessions   DateTime  @map("end_sessions") @db.Timestamp(6)
+  toleransi     Int?      @default(0)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  attendances Attendance[]
+
+  @@map("m_sessions")
+}
+
+// 3. Tabel: m_users (Data Pengguna / Mahasiswa / Mentor / Panitia)
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique @db.VarChar(45)
+  nim       String?   @unique @db.VarChar(45)
+  nama      String    @db.VarChar(45)
+  fakultas  String?   @db.VarChar(45)
+  prodi     String?   @db.VarChar(45)
+  password  String    @db.VarChar(255)
+  role      String    @db.VarChar(45) // 'maba', 'mentor', 'panitia'
+  qrToken   String?   @unique @map("qr_token") @db.VarChar(45)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  mGroupsId Int?   @map("m_groups_id")
+  group     Group? @relation(fields: [mGroupsId], references: [id], onDelete: SetNull)
+
+  groupMentors       GroupMentor[]
+  attendancesAsMaba  Attendance[]  @relation("AttendanceMaba")
+  attendancesScanned Attendance[]  @relation("AttendanceScanner")
+
+  assignmentsCreated    Assignment[]     @relation("AssignmentCreator")
+  submissionsAsMaba     Submission[]     @relation("SubmissionMaba")
+  submissionsReviewed   Submission[]     @relation("SubmissionReviewer")
+  attributesCreated     Attribute[]      @relation("AttributeCreator")
+  attributeChecksAsMaba AttributeCheck[] @relation("AttributeCheckMaba")
+  attributeChecksDone   AttributeCheck[] @relation("AttributeCheckChecker")
+
+  @@index([mGroupsId], map: "idx_users_m_groups_id")
+  @@map("m_users")
+}
+
+// 4. Tabel: groups_mentors (Pivot Many-to-Many Mentor dan Kelompok)
+model GroupMentor {
+  mGroupsId Int       @map("m_groups_id")
+  mUsersId  Int       @map("m_users_id")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  group Group @relation(fields: [mGroupsId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [mUsersId], references: [id], onDelete: Cascade)
+
+  @@id([mGroupsId, mUsersId])
+  @@map("groups_mentors")
+}
+
+// 5. Tabel: t_attendances (Data Transaksi Presensi/Kehadiran)
+model Attendance {
+  id         Int       @id @default(autoincrement())
+  mabaId     Int       @map("maba_id")
+  scannedBy  Int?      @map("scanned_by")
+  sessionsId Int       @map("sessions_id")
+  groupsId   Int?      @map("groups_id")
+  scannedAt  DateTime? @default(now()) @map("scanned_at") @db.Timestamp(6)
+  status     String    @db.VarChar(45) // 'Hadir', 'Izin', 'Sakit', 'Terlambat'
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  maba    User    @relation("AttendanceMaba", fields: [mabaId], references: [id], onDelete: Cascade)
+  scanner User?   @relation("AttendanceScanner", fields: [scannedBy], references: [id], onDelete: SetNull)
+  session Session @relation(fields: [sessionsId], references: [id], onDelete: Cascade)
+  group   Group?  @relation(fields: [groupsId], references: [id], onDelete: SetNull)
+
+  @@index([mabaId], map: "idx_attendances_maba_id")
+  @@index([sessionsId], map: "idx_attendances_sessions_id")
+  @@index([groupsId], map: "idx_attendances_groups_id")
+  @@index([scannedBy], map: "idx_attendances_scanned_by")
+  @@map("t_attendances")
+}
+
+// 6. Tabel: m_assignments (Daftar Tugas yang dibuat oleh Admin/Panitia)
+model Assignment {
+  id            Int       @id @default(autoincrement())
+  title         String    @db.VarChar(100)
+  description   String?   @db.Text
+  attachmentUrl String?   @map("attachment_url") @db.Text
+  dueDate       DateTime  @map("due_date") @db.Timestamp(6)
+  createdBy     Int?      @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  creator     User?        @relation("AssignmentCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  submissions Submission[]
+
+  @@index([createdBy], map: "idx_assignments_created_by")
+  @@map("m_assignments")
+}
+
+// 7. Tabel: t_submissions (Data Pengumpulan Tugas oleh Maba & Review Mentor/Admin)
+model Submission {
+  id           Int       @id @default(autoincrement())
+  assignmentId Int       @map("assignment_id")
+  mabaId       Int       @map("maba_id")
+  fileUrl      String    @map("file_url") @db.Text
+  notes        String?   @db.Text
+  submittedAt  DateTime? @default(now()) @map("submitted_at") @db.Timestamp(6)
+  status       String    @default("submitted") @db.VarChar(45) // 'submitted', 'late', 'graded', 'resubmit'
+  score        Decimal?  @db.Decimal(5, 2)
+  feedback     String?   @db.Text
+  reviewedBy   Int?      @map("reviewed_by")
+  reviewedAt   DateTime? @map("reviewed_at") @db.Timestamp(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  maba       User       @relation("SubmissionMaba", fields: [mabaId], references: [id], onDelete: Cascade)
+  reviewer   User?      @relation("SubmissionReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@unique([assignmentId, mabaId], map: "uq_maba_assignment")
+  @@index([assignmentId], map: "idx_submissions_assignment_id")
+  @@index([mabaId], map: "idx_submissions_maba_id")
+  @@index([reviewedBy], map: "idx_submissions_reviewed_by")
+  @@index([status], map: "idx_submissions_status")
+  @@map("t_submissions")
+}
+
+// 8. Tabel: m_attributes (Master Atribut / Perlengkapan Maba)
+model Attribute {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  targetDate  DateTime  @map("target_date") @db.Date
+  type        String    @default("individu") @db.VarChar(20) // 'individu' | 'kelompok'
+  createdBy   Int?      @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  creator User?            @relation("AttributeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  checks  AttributeCheck[]
+
+  @@index([targetDate], map: "idx_attributes_target_date")
+  @@map("m_attributes")
+}
+
+// 9. Tabel: t_attribute_checks (Transaksi Pengecekan Atribut oleh Mentor)
+model AttributeCheck {
+  id          Int      @id @default(autoincrement())
+  attributeId Int      @map("attribute_id")
+  mabaId      Int?     @map("maba_id")
+  groupId     Int?     @map("group_id")
+  checkedBy   Int      @map("checked_by")
+  isBrought   Boolean  @default(true) @map("is_brought")
+  notes       String?  @db.Text
+  checkedAt   DateTime @default(now()) @map("checked_at") @db.Timestamp(6)
+
+  attribute Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  maba      User?     @relation("AttributeCheckMaba", fields: [mabaId], references: [id], onDelete: Cascade)
+  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  checker   User      @relation("AttributeCheckChecker", fields: [checkedBy], references: [id], onDelete: Cascade)
+
+  @@unique([attributeId, mabaId], map: "uq_check_individu")
+  @@unique([attributeId, groupId], map: "uq_check_kelompok")
+  @@index([mabaId], map: "idx_attr_checks_maba")
+  @@index([groupId], map: "idx_attr_checks_group")
+  @@map("t_attribute_checks")
+}
+
+// 10. Tabel: m_documentations (Galeri Dokumentasi — dikelola admin/panitia)
+model Documentation {
+  id        Int       @id @default(autoincrement())
+  imageUrl  String    @map("image_url") @db.Text
+  title     String    @db.VarChar(200)
+  tag       String    @db.VarChar(60)
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+
+  @@index([sortOrder], map: "idx_documentations_sort")
+  @@map("m_documentations")
+}

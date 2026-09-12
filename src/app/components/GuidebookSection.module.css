@@ -1,0 +1,352 @@
+.section {
+  padding: clamp(3rem, 5vw, 5rem) clamp(1.5rem, 5vw, 3rem);
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  color: var(--lp-text, #1e293b);
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.highlightText {
+  background: linear-gradient(135deg, var(--lp-sunset-from, #3b82f6), var(--lp-ocean-from, #6366f1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--lp-text-muted, #64748b);
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.flipbookWrapper {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toolbar {
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.5rem 0;
+  background: transparent;
+  backdrop-filter: none;
+  WebkitBackdropFilter: none;
+  border: none;
+  border-radius: 0;
+  margin: 1.75rem auto 0 auto;
+  box-shadow: none;
+  position: relative;
+  z-index: 10;
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 1.6rem;
+  background: #cbd5e1;
+  margin: 0 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .toolbarDivider {
+    display: none;
+  }
+}
+
+.toolBtn {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #ffffff;
+  padding: 0.5rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+}
+
+.toolBtn:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #3b82f6;
+  color: #68cfeb;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+}
+
+.toolBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #64748b;
+  border-color: transparent;
+  color: #f1f5f9;
+  box-shadow: none;
+}
+
+.toolBtnIcon {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #ffffff;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+}
+
+.toolBtnIcon:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #3b82f6;
+  color: #68cfeb;
+  transform: scale(1.06);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+}
+
+.toolBtnIcon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #64748b;
+  border-color: transparent;
+  color: #f1f5f9;
+  box-shadow: none;
+}
+
+.pageInfoBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.pageInfoNum {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+.pageInfoTotal {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.pageInfoSeparator {
+  opacity: 0.4;
+  margin: 0 0.1rem;
+}
+
+.zoomBadge {
+  font-size: 0.85rem;
+  color: #0f172a;
+  font-weight: 800;
+  min-width: 44px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.06);
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+}
+
+.downloadBtn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: #ffffff;
+  padding: 0.5rem 1.15rem;
+  border-radius: 9999px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.downloadBtn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+}
+
+.bookViewport {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.flipBook {
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.flipBook :global(.stpageflip-page),
+.flipBook :global(.--hard) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.pageItem {
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.pageInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.25);
+}
+
+.pageImg {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border-radius: 1.25rem;
+}
+
+.pageFooterBadge {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  z-index: 5;
+}
+
+/* Loading States */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 450px;
+  gap: 1.25rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(15, 23, 42, 0.1);
+  border-left-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  font-size: 1.05rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.progressBarBg {
+  width: 280px;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+  transition: width 0.2s ease-out;
+  border-radius: 9999px;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 2.5rem 0.75rem;
+  }
+  .title {
+    font-size: 1.75rem;
+  }
+  .bookViewport {
+    padding: 0.5rem 0;
+    overflow-x: hidden;
+  }
+  .toolbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .toolbarGroup {
+    justify-content: center;
+  }
+}

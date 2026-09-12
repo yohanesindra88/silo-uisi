@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50" width="140" height="50">
+      <circle cx="22" cy="25" r="14" fill="#00AA13" />
+      <circle cx="22" cy="25" r="5" fill="#FFFFFF" />
+      <text x="44" y="33" font-family="'Poppins', sans-serif" font-weight="900" font-size="22" fill="#111827">gojek</text>
+    </svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 50" width="170" height="50">
+      <polygon points="20,40 30,15 40,40" fill="#3182CE" />
+      <polygon points="32,40 42,20 52,40" fill="#63B3ED" />
+      <text x="60" y="33" font-family="'Poppins', sans-serif" font-weight="800" font-size="15" fill="#2B6CB0">Le Minerale</text>
+    </svg>

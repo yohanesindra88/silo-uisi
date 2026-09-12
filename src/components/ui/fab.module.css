@@ -1,0 +1,15 @@
+.fabContainer {
+  position: fixed;
+  right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  display: flex;
+  align-items: center;
+}
+
+/* Hanya pada Desktop lebar (>= 1200px) sesuaikan posisi dengan batas frame */
+@media (min-width: 1200px) {
+  .fabContainer {
+    right: max(20px, calc(50vw - 380px));
+  }
+}

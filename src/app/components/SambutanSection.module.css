@@ -1,0 +1,342 @@
+.section {
+  padding: 3.5rem 1.5rem;
+  position: relative;
+  width: 100%;
+}
+
+.header {
+  text-align: center;
+  max-width: 750px;
+  margin: 0 auto 3rem auto;
+}
+
+.title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  color: var(--lp-ocean-blue);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.titleGradient {
+  background: linear-gradient(135deg, var(--lp-ocean-blue), var(--lp-aqua));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  color: var(--lp-text-muted);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3.5rem;
+}
+
+/* Feature Block Layout */
+.sambutanBlock {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 2.5rem;
+  align-items: center;
+  background: linear-gradient(145deg, #112d3a 0%, #0d222c 100%);
+  border: 1px solid rgba(104, 207, 235, 0.25);
+  border-radius: 28px;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 20px 50px rgba(10, 25, 35, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.imageLeftBlock {
+  grid-template-columns: 420px 1fr;
+}
+
+.sambutanBlock::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(104, 207, 235, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Left Box: Speech Content */
+.speechBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #e2f1f8;
+  position: relative;
+  z-index: 1;
+  height: 100%;
+}
+
+.quoteMark {
+  font-family: Georgia, serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  color: #f1c40f;
+  margin-bottom: -0.5rem;
+  opacity: 0.9;
+}
+
+.speechTitle {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.paragraphList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.paragraphItem {
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: rgba(230, 242, 248, 0.9);
+  font-weight: 400;
+}
+
+.authorFooter {
+  border-top: 1px dashed rgba(104, 207, 235, 0.25);
+  padding-top: 1.25rem;
+  margin-top: auto;
+}
+
+.authorName {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: #f1c40f;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.authorTitle {
+  font-size: 0.85rem;
+  color: rgba(160, 200, 215, 0.85);
+  font-weight: 500;
+}
+
+/* Right Box: Photo Frame & Gold Ribbon */
+.photoBoxWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+  height: 100%;
+  padding-bottom: 0.75rem;
+}
+
+.photoFrame {
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  border-radius: 24px;
+  border: 2px solid rgba(104, 207, 235, 0.4);
+  background: linear-gradient(180deg, rgba(31, 75, 93, 0.4) 0%, rgba(13, 34, 44, 0.9) 100%);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.portraitPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transition: transform 0.5s ease;
+}
+
+.photoFrame:hover .portraitPhoto {
+  transform: scale(1.04);
+}
+
+/* Ornate Gold Ribbon Banner */
+.bannerRibbon {
+  width: 108%;
+  background: linear-gradient(135deg, #f3d069 0%, #e0b034 50%, #c49216 100%);
+  color: #0b222d;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(255, 255, 255, 0.4) inset;
+  margin-top: -1.75rem;
+  position: relative;
+  z-index: 3;
+  border: 1px solid #ffe893;
+}
+
+.ribbonOrnate {
+  font-size: 1rem;
+  color: #0b222d;
+  opacity: 0.8;
+}
+
+.ribbonText {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Responsive Queries */
+
+/* Tablet & iPad Screens (768px - 1024px) */
+@media (max-width: 1024px) {
+  .section {
+    padding: 3rem 1.25rem;
+  }
+  .container {
+    gap: 3rem;
+  }
+  .sambutanBlock {
+    grid-template-columns: 1fr 340px;
+    padding: 2.25rem 2rem;
+    gap: 2rem;
+  }
+  .imageLeftBlock {
+    grid-template-columns: 340px 1fr;
+  }
+  .photoFrame {
+    min-height: 380px;
+  }
+  .speechTitle {
+    font-size: 1.95rem;
+  }
+  .bannerRibbon {
+    width: 104%;
+  }
+}
+
+/* iPad Portrait & Small Tablets (768px - 900px) */
+@media (max-width: 900px) {
+  .sambutanBlock,
+  .imageLeftBlock {
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
+    padding: 2rem 1.75rem;
+    border-radius: 24px;
+  }
+  .speechBox {
+    order: 2;
+  }
+  .photoBoxWrapper {
+    order: 1;
+    max-width: 420px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .photoFrame {
+    height: 380px;
+    min-height: 360px;
+  }
+  .bannerRibbon {
+    width: 100%;
+    margin-top: -1.5rem;
+  }
+}
+
+/* Mobile HP (< 640px) */
+@media (max-width: 640px) {
+  .section {
+    padding: 2.5rem 1rem;
+  }
+  .header {
+    margin-bottom: 2.25rem;
+  }
+  .subtitle {
+    font-size: 0.92rem;
+  }
+  .container {
+    gap: 2.25rem;
+  }
+  .sambutanBlock,
+  .imageLeftBlock {
+    padding: 1.5rem 1.25rem;
+    border-radius: 20px;
+    gap: 1.75rem;
+  }
+  .speechTitle {
+    font-size: 1.55rem;
+    margin-bottom: 1rem;
+  }
+  .quoteMark {
+    font-size: 2.75rem;
+  }
+  .paragraphList {
+    gap: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  .paragraphItem {
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+  .authorName {
+    font-size: 1.1rem;
+  }
+  .authorTitle {
+    font-size: 0.8rem;
+  }
+  .photoBoxWrapper {
+    max-width: 100%;
+  }
+  .photoFrame {
+    height: 330px;
+    min-height: auto;
+    border-radius: 18px;
+  }
+  .bannerRibbon {
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
+    margin-top: -1.25rem;
+    border-radius: 8px;
+  }
+  .ribbonText {
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+  }
+  .ribbonOrnate {
+    font-size: 0.85rem;
+  }
+}
+
+/* Extra Small Phones (< 380px) */
+@media (max-width: 380px) {
+  .sambutanBlock,
+  .imageLeftBlock {
+    padding: 1.25rem 1rem;
+  }
+  .speechTitle {
+    font-size: 1.4rem;
+  }
+  .photoFrame {
+    height: 290px;
+  }
+  .ribbonText {
+    font-size: 0.8rem;
+  }
+}
