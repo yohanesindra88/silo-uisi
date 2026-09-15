@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo_aethera.png?v=99",
     shortcut: "/logo_aethera.png?v=99",
-    apple: "/logo_aethera.png?v=99",
+    apple: "/apple-icon.png",
   },
   other: {
     google: "notranslate",
@@ -35,7 +35,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/logo_aethera.png?v=99" type="image/png" sizes="any" />
         <link rel="shortcut icon" href="/logo_aethera.png?v=99" type="image/png" />
-        <link rel="apple-touch-icon" href="/logo_aethera.png?v=99" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
       </head>
       <body suppressHydrationWarning>
         <AosInit />
