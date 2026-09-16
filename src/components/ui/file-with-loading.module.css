@@ -1,0 +1,181 @@
+/* FileWithLoading Styles */
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(31, 75, 93, 0.12);
+  border-radius: var(--radius-md, 14px);
+  box-shadow: 0 4px 16px rgba(31, 75, 93, 0.05);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(31, 75, 93, 0.1);
+  border-color: var(--lp-aqua, #68cfeb);
+}
+
+.leftContent {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.iconWrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.container:hover .iconWrapper {
+  transform: scale(1.06);
+}
+
+/* Icon Type Themes */
+.iconPdf {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.iconImage {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.iconDoc {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.iconDefault {
+  background: rgba(31, 75, 93, 0.1);
+  color: var(--lp-ocean-blue, #1f4b5d);
+}
+
+.fileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.fileName {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--lp-text, #1f1e19);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--lp-text-muted, #64748b);
+}
+
+.typeBadge {
+  background: rgba(31, 75, 93, 0.08);
+  color: var(--lp-ocean-blue, #1f4b5d);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.68rem;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--lp-ocean-blue, #1f4b5d);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.actionButton:hover {
+  background: #2a637a;
+  transform: translateY(-1px);
+}
+
+/* Skeleton Loading Mode */
+.skeletonContainer {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(31, 75, 93, 0.08);
+  pointer-events: none;
+}
+
+.skeletonBox {
+  background: linear-gradient(
+    110deg,
+    rgba(31, 75, 93, 0.06) 8%,
+    rgba(104, 207, 235, 0.2) 25%,
+    rgba(31, 75, 93, 0.06) 40%
+  );
+  background-size: 200% 100%;
+  animation: fileShimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 6px;
+}
+
+.skeletonIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.skeletonTitle {
+  width: 55%;
+  height: 16px;
+  margin-bottom: 4px;
+}
+
+.skeletonMeta {
+  width: 30%;
+  height: 12px;
+}
+
+.skeletonBtn {
+  width: 80px;
+  height: 32px;
+  border-radius: var(--radius-sm, 8px);
+  flex-shrink: 0;
+}
+
+@keyframes fileShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

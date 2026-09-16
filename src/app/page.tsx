@@ -56,7 +56,7 @@ export default async function Home() {
         <main className={styles.main}>
           {/* ===== HERO ===== */}
           <section className={styles.hero}>
-            <div className={styles.heroContent} data-aos="fade-right">
+            <div className={styles.heroContent} data-aos="fade-right" suppressHydrationWarning>
               <span className={styles.heroTag}>
                 <Sparkles style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} size={14} /> AETHERA SILO UISI 2026
               </span>
@@ -79,7 +79,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className={styles.heroVisual} data-aos="fade-left">
+            <div className={styles.heroVisual} data-aos="fade-left" suppressHydrationWarning>
               <div className={styles.heroGeoBg}></div>
               <div className={styles.heroImageContainer}>
                 <img
@@ -98,7 +98,7 @@ export default async function Home() {
 
 
           {/* ===== ABOUT SILO ===== */}
-          <section id="about" className={styles.section} data-aos="fade-up">
+          <section id="about" className={styles.section} data-aos="fade-up" suppressHydrationWarning>
             <div className={styles.aboutGrid}>
               <div>
                 <h2 className={styles.sectionTitle} style={{ textAlign: "left" }}>
@@ -127,7 +127,7 @@ export default async function Home() {
 
 
           {/* ===== DOKUMENTASI TAHUN LALU ===== */}
-          <section id="dokumentasi" className={styles.section} data-aos="fade-up">
+          <section id="dokumentasi" className={styles.section} data-aos="fade-up" suppressHydrationWarning>
             <h2 className={styles.sectionTitle}>
               Kilasan <span className={styles.titleGradient}>SILO Tahun Lalu</span>
             </h2>
@@ -149,6 +149,7 @@ export default async function Home() {
             className={styles.section}
             style={{ overflow: "hidden" }}
             data-aos="fade-up"
+            suppressHydrationWarning
           >
             <MerchCarousel />
             <div

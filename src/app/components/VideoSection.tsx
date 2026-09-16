@@ -42,7 +42,12 @@ const VIDEO_ROWS: VideoRow[] = [
 
 export default function VideoSection() {
   return (
-    <section id="video" className={styles.section} data-aos="fade-up">
+    <section
+      id="video"
+      className={styles.section}
+      data-aos="fade-up"
+      suppressHydrationWarning
+    >
       {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>

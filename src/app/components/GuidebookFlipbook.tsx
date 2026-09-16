@@ -14,9 +14,9 @@ import {
   Download 
 } from "lucide-react";
 
-// Configure local worker path for pdfjs-dist v3
+// Configure local worker path for pdfjs-dist
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 }
 
 interface PageProps {
@@ -26,14 +26,34 @@ interface PageProps {
 
 // React.forwardRef is strictly required by react-pageflip
 const Page = React.forwardRef<HTMLDivElement, PageProps>((props, ref) => {
+  const [isReady, setIsReady] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsReady(true);
+    }
+  }, [props.imageSrc]);
+
   return (
     <div className={styles.pageItem} ref={ref}>
       <div className={styles.pageInner}>
+        {!isReady && (
+          <div className={styles.pageSkeleton}>
+            <div className={styles.pageShimmer} />
+            <div className={styles.pageSkeletonBadge}>
+              <span className={styles.pageSkeletonSpinner} />
+              <span>Memuat Hal. {props.pageNumber}</span>
+            </div>
+          </div>
+        )}
         <img
+          ref={imgRef}
           src={props.imageSrc}
           alt={`Guidebook Halaman ${props.pageNumber}`}
-          className={styles.pageImg}
+          className={`${styles.pageImg} ${isReady ? styles.pageImgLoaded : styles.pageImgLoading}`}
           loading="eager"
+          onLoad={() => setIsReady(true)}
         />
         <div className={styles.pageFooterBadge}>
           <span>{props.pageNumber}</span>

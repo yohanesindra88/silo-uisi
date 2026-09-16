@@ -2,14 +2,19 @@
 
 import React from "react";
 import styles from "./MapsSection.module.css";
-import { MapPin, Navigation, Clock, Building2, ExternalLink } from "lucide-react";
+import { MapPin, Navigation, Building2, ExternalLink } from "lucide-react";
 
 export default function MapsSection() {
   const googleMapsUrl =
     "https://maps.google.com/?q=Kompleks+PT.+Semen+Indonesia,+Jl.+Veteran,+Tuban+Barat,+Tlogobendung,+Kec.+Gresik,+Kabupaten+Gresik,+Jawa+Timur+61122";
 
   return (
-    <section id="lokasi" className={styles.section} data-aos="fade-up">
+    <section
+      id="lokasi"
+      className={styles.section}
+      data-aos="fade-up"
+      suppressHydrationWarning
+    >
       {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>

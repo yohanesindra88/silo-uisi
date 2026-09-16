@@ -3,6 +3,7 @@
 import React from "react";
 import styles from "./SambutanSection.module.css";
 import { getCloudinaryUrl } from "@/utils/cloudinary";
+import { ImageWithLoading } from "@/components/ui/image-with-loading";
 
 import rektorImg from "./Rektor.jpg";
 
@@ -79,12 +80,14 @@ export default function SambutanSection() {
                 {/* Photo Box on Left */}
                 <div className={styles.photoBoxWrapper}>
                   <div className={styles.photoFrame}>
-                    <img
+                    <ImageWithLoading
                       src={item.isLocal ? item.image : getCloudinaryUrl(item.image, 1000)}
                       alt={item.name}
                       className={styles.portraitPhoto}
+                      wrapperStyle={{ width: '100%', height: '100%' }}
                       loading="lazy"
                       decoding="async"
+                      showIndicator
                     />
                   </div>
 
@@ -141,12 +144,14 @@ export default function SambutanSection() {
                 {/* Photo Box on Right */}
                 <div className={styles.photoBoxWrapper}>
                   <div className={styles.photoFrame}>
-                    <img
+                    <ImageWithLoading
                       src={item.isLocal ? item.image : getCloudinaryUrl(item.image, 1000)}
                       alt={item.name}
                       className={styles.portraitPhoto}
+                      wrapperStyle={{ width: '100%', height: '100%' }}
                       loading="lazy"
                       decoding="async"
+                      showIndicator
                     />
                   </div>
 

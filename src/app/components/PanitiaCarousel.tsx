@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./PanitiaCarousel.module.css";
 import { getCloudinaryUrl } from "@/utils/cloudinary";
+import { ImageWithLoading } from "@/components/ui/image-with-loading";
 
 interface PanitiaPerson {
   id: string;
@@ -184,13 +185,15 @@ export default function PanitiaCarousel() {
                 willChange: "transform, opacity, filter",
               }}
             >
-              {/* Background Photo */}
-              <img
+              {/* Background Photo with loading skeleton */}
+              <ImageWithLoading
                 src={getCloudinaryUrl(person.image, 0)}
                 alt={person.name}
                 className={styles.cardPhoto}
+                wrapperClassName={styles.cardPhotoWrapper}
                 loading="lazy"
                 decoding="async"
+                showIndicator
               />
 
               {/* Gradient Overlay */}

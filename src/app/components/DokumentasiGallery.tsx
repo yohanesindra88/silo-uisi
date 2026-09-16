@@ -2,20 +2,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./DokumentasiGallery.module.css";
 import { getCloudinaryUrl } from "@/utils/cloudinary";
+import { ImageWithLoading } from "@/components/ui/image-with-loading";
 
-export interface DocItem {
+interface DocItem {
   id: string;
   src: string;
   title: string;
   tag: string;
 }
 
-/**
- * Data cadangan bila database belum di-seed atau fetch gagal.
- * Sumber kebenaran sekarang ada di tabel m_documentations; lihat
- * prisma/seeders/documentations.seeder.ts.
- */
-const FALLBACK_DOC_ITEMS: DocItem[] = [
+const DOC_ITEMS: DocItem[] = [
   {
     id: "doc-1",
     src: "/dokumentasi/doc_1.webp",
@@ -90,21 +86,15 @@ const FALLBACK_DOC_ITEMS: DocItem[] = [
   },
 ];
 
-export interface DokumentasiGalleryProps {
-  /** Diisi server component dari database; kosong -> pakai data cadangan. */
-  items?: DocItem[];
-}
+// Duplikasi data agar slider menyambung tanpa henti (infinite seamless loop)
+const EXTENDED_ITEMS = [...DOC_ITEMS, ...DOC_ITEMS];
 
-export default function DokumentasiGallery({ items }: DokumentasiGalleryProps) {
-  const docItems = items && items.length > 0 ? items : FALLBACK_DOC_ITEMS;
-  // Duplikasi data agar slider menyambung tanpa henti (infinite seamless loop)
-  const extendedItems = [...docItems, ...docItems];
-
+export default function DokumentasiGallery() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<DocItem | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(true);
-  const totalOriginal = docItems.length;
+  const totalOriginal = DOC_ITEMS.length;
 
   const handleNext = useCallback(() => {
     setIsTransitioning(true);
@@ -167,18 +157,20 @@ export default function DokumentasiGallery({ items }: DokumentasiGalleryProps) {
               : "none",
           }}
         >
-          {extendedItems.map((item, index) => (
+          {EXTENDED_ITEMS.map((item, index) => (
             <div
               key={`${item.id}-${index}`}
               className={styles.slideCard}
               onClick={() => setSelectedImage(item)}
             >
-              <img
+              <ImageWithLoading
                 src={getCloudinaryUrl(item.src, 600)}
                 alt={item.title}
                 className={styles.slideImage}
+                wrapperClassName={styles.slideImageWrapper}
                 loading="lazy"
                 decoding="async"
+                showIndicator
               />
               <div className={styles.overlay}>
                 <span className={styles.itemTag}>{item.tag}</span>
@@ -227,10 +219,12 @@ export default function DokumentasiGallery({ items }: DokumentasiGalleryProps) {
             >
               ×
             </button>
-            <img
+            <ImageWithLoading
               src={getCloudinaryUrl(selectedImage.src)}
               alt={selectedImage.title}
               className={styles.modalImage}
+              wrapperClassName={styles.modalImageWrapper}
+              showIndicator
             />
           </div>
         </div>
