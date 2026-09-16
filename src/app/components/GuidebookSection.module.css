@@ -259,6 +259,66 @@
   box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.25);
 }
 
+.pageSkeleton {
+  position: absolute;
+  inset: 0;
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.pageShimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    rgba(31, 75, 93, 0.05) 8%,
+    rgba(104, 207, 235, 0.22) 25%,
+    rgba(31, 75, 93, 0.05) 40%
+  );
+  background-size: 200% 100%;
+  animation: pageShimmerAnim 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes pageShimmerAnim {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.pageSkeletonBadge {
+  position: relative;
+  z-index: 4;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  color: var(--lp-ocean-blue, #1f4b5d);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(31, 75, 93, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageSkeletonSpinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(31, 75, 93, 0.2);
+  border-left-color: var(--lp-aqua, #68cfeb);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 .pageImg {
   width: 100%;
   height: 100%;
@@ -267,6 +327,17 @@
   margin: 0;
   padding: 0;
   border-radius: 1.25rem;
+  transition: opacity 0.45s ease, filter 0.45s ease;
+}
+
+.pageImgLoading {
+  opacity: 0;
+  filter: blur(8px);
+}
+
+.pageImgLoaded {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .pageFooterBadge {
