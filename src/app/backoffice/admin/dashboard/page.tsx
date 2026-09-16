@@ -470,6 +470,53 @@ export default function AdminDashboardPage() {
         <ChevronRight size={20} color="#0F766E" />
       </Link>
 
+      {/* Pintasan Cepat: Master Data & Import Excel */}
+      <Link
+        href="/admin/master-data"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "14px",
+          background: "linear-gradient(135deg, rgba(31, 75, 93, 0.08) 0%, rgba(104, 207, 235, 0.08) 100%)",
+          borderRadius: "18px",
+          padding: "16px 18px",
+          marginBottom: "18px",
+          border: "1.5px solid rgba(31, 75, 93, 0.15)",
+          textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(31, 75, 93, 0.04)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              backgroundColor: "#1F4B5D",
+              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(31, 75, 93, 0.25)",
+            }}
+          >
+            <Users size={22} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#1F4B5D" }}>
+              Master Data &amp; Import Excel
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.7)", marginTop: "2px" }}>
+              Upload akun massal, auto-password unik &amp; unduh rekap &rarr;
+            </div>
+          </div>
+        </div>
+
+        <ChevronRight size={20} color="#1F4B5D" />
+      </Link>
+
       {/* 2. Statistik Global Kehadiran & Tugas */}
       <h3
         style={{
