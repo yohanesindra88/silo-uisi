@@ -80,7 +80,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FTI",
     prodi: "Sistem Informasi",
-    qrToken: "QR_302261001_SIRIUS",
+    qrToken: "QR_302261001_8F2A1C09",
     groupKeyword: "Sirius",
   },
   {
@@ -91,7 +91,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FTI",
     prodi: "Informatika",
-    qrToken: "QR_302261002_SIRIUS",
+    qrToken: "QR_302261002_7B3E9D12",
     groupKeyword: "Sirius",
   },
   {
@@ -102,7 +102,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FTI",
     prodi: "Teknik Logistik",
-    qrToken: "QR_302261006_SIRIUS",
+    qrToken: "QR_302261006_4C8A2E71",
     groupKeyword: "Sirius",
   },
   {
@@ -113,7 +113,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FEB",
     prodi: "Akuntansi",
-    qrToken: "QR_302261003_VEGA",
+    qrToken: "QR_302261003_1D5F6B84",
     groupKeyword: "Vega",
   },
   {
@@ -124,7 +124,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FTI",
     prodi: "Teknik Logistik",
-    qrToken: "QR_302261005_VEGA",
+    qrToken: "QR_302261005_9E0A3C57",
     groupKeyword: "Vega",
   },
   {
@@ -135,7 +135,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FEB",
     prodi: "Manajemen",
-    qrToken: "QR_302261007_VEGA",
+    qrToken: "QR_302261007_6B1D4F92",
     groupKeyword: "Vega",
   },
   {
@@ -146,7 +146,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FEB",
     prodi: "Manajemen",
-    qrToken: "QR_302261004_CANOPUS",
+    qrToken: "QR_302261004_3A7C8E15",
     groupKeyword: "Canopus",
   },
   {
@@ -157,7 +157,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FTI",
     prodi: "Informatika",
-    qrToken: "QR_302261008_CANOPUS",
+    qrToken: "QR_302261008_5F9B2D46",
     groupKeyword: "Canopus",
   },
   {
@@ -168,7 +168,7 @@ export const usersData: UserSeedItem[] = [
     role: "maba",
     fakultas: "FTI",
     prodi: "Sistem Informasi",
-    qrToken: "QR_302261009_CANOPUS",
+    qrToken: "QR_302261009_2C6E0A78",
     groupKeyword: "Canopus",
   },
 ];

@@ -19,8 +19,8 @@ export class UserModel {
    * Helper generator QR token acak yang unik untuk maba
    */
   static generateQrToken(nim?: string | null): string {
-    const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return nim ? `QR-${nim}-${randomSuffix}` : `QR-${Date.now().toString(36).toUpperCase()}-${randomSuffix}`;
+    const randomSuffix = Math.random().toString(36).substring(2, 10).toUpperCase();
+    return nim ? `QR_${nim}_${randomSuffix}` : `QR_${Date.now().toString(36).toUpperCase()}_${randomSuffix}`;
   }
 
   /**

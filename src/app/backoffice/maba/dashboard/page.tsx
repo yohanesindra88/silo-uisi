@@ -632,17 +632,6 @@ export default function MabaDashboardPage() {
                 level="M"
                 includeMargin={true}
               />
-              <span
-                style={{
-                  marginTop: "8px",
-                  fontSize: "0.7rem",
-                  fontFamily: "monospace",
-                  fontWeight: 700,
-                  color: "#1F4B5D",
-                }}
-              >
-                {user?.qr_token || "QR_CODE_ACTIVE"}
-              </span>
             </div>
 
             {/* Detail Maba */}

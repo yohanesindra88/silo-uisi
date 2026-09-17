@@ -23,6 +23,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { formatDateTimeInput, parseDateTimeInput } from "@/utils/date";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 interface UserProfile {
   id: number;
@@ -33,6 +35,8 @@ interface UserProfile {
 interface SessionItem {
   id: number;
   name: string;
+  attendanceType?: string;
+  attendance_type?: string;
   start_sessions?: string;
   end_sessions?: string;
   startSessions?: string;
@@ -54,6 +58,8 @@ interface AttendanceRow {
   groupId?: number;
   sessionName: string;
   sessionId: number;
+  sessionAttendanceType?: "grup" | "prodi";
+  sessionKeterangan?: "Kelompok" | "Prodi";
   scanTime: string;
   status: "Hadir" | "Terlambat" | "Tidak Hadir" | "Belum Hadir" | string;
 }
@@ -116,6 +122,7 @@ export default function AdminMonitoringPage() {
   // Modal Tambah Sesi States
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
   const [newSessionName, setNewSessionName] = useState("");
+  const [newAttendanceType, setNewAttendanceType] = useState<"grup" | "prodi">("grup");
   const [newStartSessions, setNewStartSessions] = useState("");
   const [newEndSessions, setNewEndSessions] = useState("");
   const [newToleransi, setNewToleransi] = useState(15);
@@ -127,6 +134,7 @@ export default function AdminMonitoringPage() {
   const [isEditSessionModalOpen, setIsEditSessionModalOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<SessionItem | null>(null);
   const [editSessionName, setEditSessionName] = useState("");
+  const [editAttendanceType, setEditAttendanceType] = useState<"grup" | "prodi">("grup");
   const [editStartSessions, setEditStartSessions] = useState("");
   const [editEndSessions, setEditEndSessions] = useState("");
   const [editToleransi, setEditToleransi] = useState(15);
@@ -191,6 +199,10 @@ export default function AdminMonitoringPage() {
 
       // Loop untuk setiap sesi dan setiap maba resmi di database
       sessList.forEach((sess) => {
+        const isSessP = (sess.attendance_type || sess.attendanceType) === "prodi";
+        const sessKet = isSessP ? "Prodi" : "Kelompok";
+        const sessType = isSessP ? "prodi" : "grup";
+
         mabaList.forEach((maba) => {
           // Cari record presensi maba pada sesi ini
           const att = rawAttendances.find(
@@ -212,6 +224,8 @@ export default function AdminMonitoringPage() {
               groupId: gId,
               sessionName: sess.name,
               sessionId: sess.id,
+              sessionAttendanceType: sessType,
+              sessionKeterangan: sessKet,
               scanTime: att.createdAt || att.scannedAt
                 ? new Date(att.createdAt || att.scannedAt).toLocaleTimeString("id-ID", {
                     hour: "2-digit",
@@ -232,6 +246,8 @@ export default function AdminMonitoringPage() {
               groupId: gId,
               sessionName: sess.name,
               sessionId: sess.id,
+              sessionAttendanceType: sessType,
+              sessionKeterangan: sessKet,
               scanTime: "-",
               status: isEnded ? "Tidak Hadir" : "Belum Hadir",
             });
@@ -289,8 +305,8 @@ export default function AdminMonitoringPage() {
     const start = new Date(now.getTime() + 10 * 60 * 1000);
     const end = new Date(start.getTime() + 120 * 60 * 1000); // 2 jam kemudian
     setNewSessionName("");
-    setNewStartSessions(formatDateTimeLocal(start));
-    setNewEndSessions(formatDateTimeLocal(end));
+    setNewStartSessions(formatDateTimeInput(start));
+    setNewEndSessions(formatDateTimeInput(end));
     setNewToleransi(15);
     setFormError("");
     setFormSuccess("");
@@ -312,11 +328,11 @@ export default function AdminMonitoringPage() {
       return;
     }
 
-    const start = new Date(newStartSessions);
-    const end = new Date(newEndSessions);
+    const start = parseDateTimeInput(newStartSessions);
+    const end = parseDateTimeInput(newEndSessions);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      setFormError("Format tanggal dan waktu tidak valid.");
+    if (!start || !end) {
+      setFormError("Format tanggal & waktu tidak valid. Gunakan format DD/MM/YY HH:mm (Contoh: 17/09/26 07:00)");
       return;
     }
 
@@ -332,6 +348,8 @@ export default function AdminMonitoringPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newSessionName.trim(),
+          attendanceType: newAttendanceType,
+          attendance_type: newAttendanceType,
           startSessions: start.toISOString(),
           endSessions: end.toISOString(),
           toleransi: Number(newToleransi) || 0,
@@ -352,6 +370,7 @@ export default function AdminMonitoringPage() {
       setTimeout(() => {
         setIsAddSessionModalOpen(false);
         setNewSessionName("");
+        setNewAttendanceType("grup");
         setFormSuccess("");
       }, 1000);
     } catch (err: any) {
@@ -364,7 +383,9 @@ export default function AdminMonitoringPage() {
   // Handler Open Modal Edit Sesi
   const openEditSessionModal = (sess: SessionItem) => {
     setEditingSession(sess);
-    setEditSessionName(sess.name);
+    setEditSessionName(sess.name || "");
+    const rawType = sess.attendance_type || sess.attendanceType;
+    setEditAttendanceType(rawType === "prodi" ? "prodi" : "grup");
 
     const startVal = (sess as any).startSessions || sess.start_sessions;
     const endVal = (sess as any).endSessions || sess.end_sessions;
@@ -372,8 +393,8 @@ export default function AdminMonitoringPage() {
     const startDate = startVal ? new Date(startVal) : new Date();
     const endDate = endVal ? new Date(endVal) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
 
-    setEditStartSessions(formatDateTimeLocal(startDate));
-    setEditEndSessions(formatDateTimeLocal(endDate));
+    setEditStartSessions(formatDateTimeInput(startDate));
+    setEditEndSessions(formatDateTimeInput(endDate));
     setEditToleransi(sess.toleransi ?? 15);
     setEditFormError("");
     setEditFormSuccess("");
@@ -396,11 +417,11 @@ export default function AdminMonitoringPage() {
       return;
     }
 
-    const start = new Date(editStartSessions);
-    const end = new Date(editEndSessions);
+    const start = parseDateTimeInput(editStartSessions);
+    const end = parseDateTimeInput(editEndSessions);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      setEditFormError("Format tanggal dan waktu tidak valid.");
+    if (!start || !end) {
+      setEditFormError("Format tanggal & waktu tidak valid. Gunakan format DD/MM/YY HH:mm (Contoh: 17/09/26 07:00)");
       return;
     }
 
@@ -416,6 +437,8 @@ export default function AdminMonitoringPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editSessionName.trim(),
+          attendanceType: editAttendanceType,
+          attendance_type: editAttendanceType,
           startSessions: start.toISOString(),
           endSessions: end.toISOString(),
           toleransi: Number(editToleransi) || 0,
@@ -668,6 +691,7 @@ export default function AdminMonitoringPage() {
             const end = (sess as any).endSessions || sess.end_sessions;
             const statusInfo = getSessionStatus(start, end);
             const isSelected = selectedSession === String(sess.id);
+            const isP = (sess.attendance_type || sess.attendanceType) === "prodi";
 
             return (
               <div
@@ -690,18 +714,32 @@ export default function AdminMonitoringPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span
-                    style={{
-                      fontSize: "0.65rem",
-                      fontWeight: 800,
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      backgroundColor: isSelected ? "rgba(255, 255, 255, 0.2)" : statusInfo.bg,
-                      color: isSelected ? "#68CFEB" : statusInfo.color,
-                    }}
-                  >
-                    {statusInfo.label}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        backgroundColor: isSelected ? "rgba(255, 255, 255, 0.2)" : statusInfo.bg,
+                        color: isSelected ? "#68CFEB" : statusInfo.color,
+                      }}
+                    >
+                      {statusInfo.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        backgroundColor: isP ? "rgba(124, 58, 237, 0.15)" : "rgba(14, 165, 233, 0.15)",
+                        color: isSelected ? "#FFFFFF" : (isP ? "#7C3AED" : "#0284C7"),
+                      }}
+                    >
+                      {isP ? "🎓 Prodi" : "👥 Kelompok"}
+                    </span>
+                  </div>
                   <span
                     style={{
                       fontSize: "0.68rem",
@@ -716,7 +754,7 @@ export default function AdminMonitoringPage() {
                     }}
                   >
                     <Edit3 size={11} />
-                    <span>Edit Sesi</span>
+                    <span>Edit</span>
                   </span>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px", lineHeight: "1.2" }}>
@@ -872,11 +910,14 @@ export default function AdminMonitoringPage() {
               }}
             >
               <option value="all">Semua Sesi</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={String(s.id)}>
-                  {s.name}
-                </option>
-              ))}
+              {sessions.map((s) => {
+                const isP = (s.attendance_type || s.attendanceType) === "prodi";
+                return (
+                  <option key={s.id} value={String(s.id)}>
+                    {isP ? "🎓 [Prodi] " : "👥 [Kelompok] "}{s.name}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -1023,7 +1064,7 @@ export default function AdminMonitoringPage() {
                         {row.nama}
                       </div>
                       <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.65)" }}>
-                        NIM: {row.nim} • {row.groupName}
+                        NIM: {row.nim} • {row.sessionKeterangan === "Prodi" ? `Prodi: ${row.prodi}` : `Kelompok: ${row.groupName}`}
                       </div>
                     </div>
 
@@ -1053,7 +1094,7 @@ export default function AdminMonitoringPage() {
                       color: "#1F4B5D",
                     }}
                   >
-                    <span>Sesi: {row.sessionName}</span>
+                    <span>Sesi: {row.sessionName} ({row.sessionKeterangan || "Kelompok"})</span>
                     <span>Scan: {row.scanTime}</span>
                   </div>
                 </div>
@@ -1206,45 +1247,61 @@ export default function AdminMonitoringPage() {
                   <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
                     Waktu Mulai <span style={{ color: "#DC2626" }}>*</span>
                   </label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     required
+                    placeholder="DD/MM/YY HH:mm"
                     value={newStartSessions}
-                    onChange={(e) => setNewStartSessions(e.target.value)}
+                    onChange={setNewStartSessions}
                     disabled={isSubmittingSession}
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(31, 75, 93, 0.25)",
-                      fontSize: "0.8rem",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
                   />
+                  <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
+                    Format: DD/MM/YY HH:mm
+                  </span>
                 </div>
 
                 <div>
                   <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
                     Waktu Selesai <span style={{ color: "#DC2626" }}>*</span>
                   </label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     required
+                    placeholder="DD/MM/YY HH:mm"
                     value={newEndSessions}
-                    onChange={(e) => setNewEndSessions(e.target.value)}
+                    onChange={setNewEndSessions}
                     disabled={isSubmittingSession}
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(31, 75, 93, 0.25)",
-                      fontSize: "0.8rem",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
                   />
+                  <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
+                    Format: DD/MM/YY HH:mm
+                  </span>
                 </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
+                  Basis Otorisasi Presensi (Tipe Sesi) <span style={{ color: "#DC2626" }}>*</span>
+                </label>
+                <select
+                  value={newAttendanceType}
+                  onChange={(e) => setNewAttendanceType(e.target.value === "prodi" ? "prodi" : "grup")}
+                  disabled={isSubmittingSession}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(31, 75, 93, 0.25)",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    outline: "none",
+                    boxSizing: "border-box",
+                    backgroundColor: "#FFFFFF",
+                  }}
+                >
+                  <option value="grup">👥 Kelompok</option>
+                  <option value="prodi">🎓 Prodi</option>
+                </select>
+                <span style={{ fontSize: "0.7rem", color: "rgba(31, 75, 93, 0.6)" }}>
+                  Pilih apakah presensi maba divalidasi berdasarkan Kelompok binaan atau Program Studi.
+                </span>
               </div>
 
               <div>
@@ -1486,43 +1543,61 @@ export default function AdminMonitoringPage() {
                   <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
                     Waktu Mulai <span style={{ color: "#EF4444" }}>*</span>
                   </label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
+                    required
+                    placeholder="DD/MM/YY HH:mm"
                     value={editStartSessions}
-                    onChange={(e) => setEditStartSessions(e.target.value)}
+                    onChange={setEditStartSessions}
                     disabled={isSubmittingEditSession}
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(31, 75, 93, 0.25)",
-                      fontSize: "0.8rem",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
                   />
+                  <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
+                    Format: DD/MM/YY HH:mm
+                  </span>
                 </div>
 
                 <div>
                   <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
                     Waktu Selesai <span style={{ color: "#EF4444" }}>*</span>
                   </label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
+                    required
+                    placeholder="DD/MM/YY HH:mm"
                     value={editEndSessions}
-                    onChange={(e) => setEditEndSessions(e.target.value)}
+                    onChange={setEditEndSessions}
                     disabled={isSubmittingEditSession}
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(31, 75, 93, 0.25)",
-                      fontSize: "0.8rem",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
                   />
+                  <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
+                    Format: DD/MM/YY HH:mm
+                  </span>
                 </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
+                  Basis Otorisasi Presensi (Tipe Sesi) <span style={{ color: "#DC2626" }}>*</span>
+                </label>
+                <select
+                  value={editAttendanceType}
+                  onChange={(e) => setEditAttendanceType(e.target.value === "prodi" ? "prodi" : "grup")}
+                  disabled={isSubmittingEditSession}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(31, 75, 93, 0.25)",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    outline: "none",
+                    boxSizing: "border-box",
+                    backgroundColor: "#FFFFFF",
+                  }}
+                >
+                  <option value="grup">👥 Kelompok</option>
+                  <option value="prodi">🎓 Prodi</option>
+                </select>
+                <span style={{ fontSize: "0.7rem", color: "rgba(31, 75, 93, 0.6)" }}>
+                  Ubah apakah presensi sesi ini diperiksa berdasarkan Kelompok atau Program Studi.
+                </span>
               </div>
 
               <div>

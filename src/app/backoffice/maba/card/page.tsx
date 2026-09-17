@@ -28,6 +28,8 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 interface SessionItem {
   id: number;
   name: string;
+  attendanceType?: string;
+  attendance_type?: string;
   startSessions?: string;
   start_sessions?: string;
   endSessions?: string;
@@ -96,14 +98,21 @@ export default function MabaCardPage() {
     try {
       setLoadingAttendance(true);
       const [sessRes, attRes] = await Promise.all([
-        fetch("/api/sessions"),
+        fetch("/api/sessions?active=true"),
         fetch(`/api/attendance?mabaId=${userId}`),
       ]);
 
       if (sessRes.ok) {
         const sessJson = await sessRes.json();
         const rawSessions: SessionItem[] = Array.isArray(sessJson.data) ? sessJson.data : [];
-        setSessions(rawSessions);
+        const now = new Date();
+        const activeSessions = rawSessions.filter((s) => {
+          const startVal = s.startSessions || s.start_sessions;
+          const endVal = s.endSessions || s.end_sessions;
+          if (!startVal || !endVal) return false;
+          return now >= new Date(startVal) && now <= new Date(endVal);
+        });
+        setSessions(activeSessions);
       }
 
       if (attRes.ok) {
@@ -1052,7 +1061,7 @@ export default function MabaCardPage() {
             }}
           >
             <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#1F4B5D", textTransform: "uppercase" }}>
-              Total Sesi
+              Sesi Aktif
             </div>
             <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#1F4B5D", marginTop: "2px" }}>
               {sessions.length}
@@ -1074,7 +1083,12 @@ export default function MabaCardPage() {
             }}
           >
             <Calendar size={28} color="#94A3B8" style={{ margin: "0 auto 8px" }} />
-            <div>Belum ada jadwal sesi kegiatan yang ditambahkan.</div>
+            <div style={{ fontWeight: 800, color: "#1F4B5D", marginBottom: "4px", fontSize: "0.9rem" }}>
+              Tidak Ada Sesi yang Sedang Aktif
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.65)" }}>
+              Saat ini tidak ada sesi kegiatan yang sedang berlangsung sesuai jadwal. Presensi akan terbuka saat waktu sesi dimulai.
+            </div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -1085,6 +1099,7 @@ export default function MabaCardPage() {
               const endVal = sess.endSessions || sess.end_sessions;
               const startDate = startVal ? new Date(startVal) : null;
               const endDate = endVal ? new Date(endVal) : null;
+              const isP = (sess.attendance_type || sess.attendanceType) === "prodi";
 
               const isOngoing = startDate && endDate ? now >= startDate && now <= endDate : false;
               const isPast = endDate ? now > endDate : false;
@@ -1138,7 +1153,9 @@ export default function MabaCardPage() {
                   badgeBorder = "#0D9488";
                   badgeColor = "#0F766E";
                   badgeText = "Sedang Berlangsung";
-                  statusDesc = "Tunjukkan QR Code kartu di atas kepada Mentor untuk presensi sekarang";
+                  statusDesc = isP
+                    ? "Tunjukkan QR Code kartu di atas kepada Mentor Prodi Anda untuk presensi sekarang"
+                    : "Tunjukkan QR Code kartu di atas kepada Mentor Kelompok Anda untuk presensi sekarang";
                   StatusIcon = Clock;
                 } else if (isPast) {
                   badgeBg = "rgba(239, 68, 68, 0.1)";
@@ -1184,15 +1201,29 @@ export default function MabaCardPage() {
                     }}
                   >
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        style={{
-                          fontSize: "0.9rem",
-                          fontWeight: 800,
-                          color: "#1F1E19",
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        {sess.name}
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <span
+                          style={{
+                            fontSize: "0.9rem",
+                            fontWeight: 800,
+                            color: "#1F1E19",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {sess.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "0.65rem",
+                            fontWeight: 800,
+                            padding: "2px 6px",
+                            borderRadius: "6px",
+                            backgroundColor: isP ? "rgba(124, 58, 237, 0.12)" : "rgba(14, 165, 233, 0.12)",
+                            color: isP ? "#7C3AED" : "#0284C7",
+                          }}
+                        >
+                          {isP ? "🎓 Prodi" : "👥 Kelompok"}
+                        </span>
                       </div>
                       <div
                         style={{

@@ -40,6 +40,8 @@ interface UserProfile {
 interface SessionItem {
   id: number;
   name: string;
+  attendanceType?: string;
+  attendance_type?: string;
   start_sessions?: string;
   end_sessions?: string;
   startSessions?: string;
@@ -378,6 +380,26 @@ export default function MentorDashboardPage() {
           message: result.message || `Data QR/NIM "${cleanToken}" tidak ditemukan dalam database.`,
           time: timeStr,
         });
+      } else if (result.code === "UNAUTHORIZED_GROUP") {
+        playBeep(false);
+        const maba = result.data?.maba;
+        setScanResult({
+          type: "error",
+          title: "Di Luar Kelompok Binaan",
+          message: result.message || "Mahasiswa tidak terdaftar di kelompok binaan Anda.",
+          mabaNama: maba?.nama,
+          time: timeStr,
+        });
+      } else if (result.code === "UNAUTHORIZED_PRODI") {
+        playBeep(false);
+        const maba = result.data?.maba;
+        setScanResult({
+          type: "error",
+          title: "Di Luar Kewenangan Prodi",
+          message: result.message || "Anda tidak memiliki izin memindai prodi mahasiswa ini.",
+          mabaNama: maba?.nama,
+          time: timeStr,
+        });
       } else {
         playBeep(false);
         setScanResult({
@@ -596,26 +618,46 @@ export default function MentorDashboardPage() {
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.03)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Users size={18} color="#0F766E" />
-            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0, color: "#1F4B5D" }}>
-              Kehadiran Kelompok Binaan
-            </h3>
-          </div>
-          <span
-            style={{
-              padding: "4px 10px",
-              borderRadius: "999px",
-              backgroundColor: "rgba(15, 118, 110, 0.1)",
-              color: "#0F766E",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-            }}
-          >
-            {sessions.find((s) => s.id === selectedSessionId)?.name || "Presensi"}
-          </span>
-        </div>
+        {(() => {
+          const sess = sessions.find((s) => s.id === selectedSessionId) || sessions[0];
+          const isP = (sess?.attendance_type || sess?.attendanceType) === "prodi";
+          return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Users size={18} color="#0F766E" />
+                <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0, color: "#1F4B5D" }}>
+                  {isP ? "Kehadiran Mahasiswa Prodi" : "Kehadiran Kelompok Binaan"}
+                </h3>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    backgroundColor: isP ? "rgba(124, 58, 237, 0.12)" : "rgba(14, 165, 233, 0.12)",
+                    color: isP ? "#7C3AED" : "#0284C7",
+                    fontSize: "0.7rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  {isP ? "🎓 Prodi" : "👥 Kelompok"}
+                </span>
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    backgroundColor: "rgba(15, 118, 110, 0.1)",
+                    color: "#0F766E",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  {sess?.name || "Presensi"}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
           <div

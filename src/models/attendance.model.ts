@@ -1,5 +1,6 @@
 import { prisma } from "@/utils/prisma";
 import type { Attendance, Prisma } from "@prisma/client";
+import { canMentorScanProdi, getAllowedProdisForMentor, isProdiAttendanceType } from "@/config/attendance";
 
 export interface ScanAttendanceParams {
   qrToken: string;
@@ -18,9 +19,12 @@ export interface ScanAttendanceResult {
     | "SESSION_NOT_STARTED"
     | "SESSION_ENDED"
     | "ALREADY_ATTENDED"
+    | "UNAUTHORIZED_GROUP"
+    | "UNAUTHORIZED_PRODI"
+    | "UNAUTHORIZED_SCANNER"
     | "ERROR";
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 export class AttendanceModel {
@@ -51,12 +55,16 @@ export class AttendanceModel {
   }
 
   /**
-   * Logika Inti: Scan QR Token Maba oleh Mentor
+   * Logika Inti: Scan QR Token Maba oleh Mentor / Panitia / Admin
    * - Memvalidasi token maba (mendukung qrToken, NIM, atau username)
    * - Memvalidasi sesi aktif (mendukung sesi uji coba & bypass jadwal untuk pengujian)
+   * - Validasi Otorisasi Scanner:
+   *   * Panitia & Admin: Bypass penuh (universal scanner)
+   *   * Mentor + Sesi GROUP: Validasi kelompok binaan via groups_mentors
+   *   * Mentor + Sesi PRODI: Validasi prodi mentor vs maba via PRODI_SCAN_PERMISSIONS
    * - Menghitung keterlambatan berdasarkan endSessions + toleransi (menit)
-   * - Memvalidasi jadwal sesi kegiatansi di sesi yang sama
-   * - Mencatat data ke t_attendances
+   * - Mencegah duplikasi dengan unique constraint (maba_id, sessions_id)
+   * - Mencatat data ke t_attendances dengan groups_id merujuk ke kelompok asal maba
    */
   static async scanAndRecord(params: ScanAttendanceParams): Promise<ScanAttendanceResult> {
     const { qrToken, sessionId, scannedBy, scanTime = new Date(), allowOutsideSchedule = false } = params;
@@ -161,7 +169,81 @@ export class AttendanceModel {
       }
     }
 
-    // 4. Cek apakah sudah pernah presensi di sesi ini
+    // 4. Validasi Kewenangan Scanner (Panitia & Admin vs Mentor)
+    if (scannedBy) {
+      const scanner = await prisma.user.findFirst({
+        where: { id: Number(scannedBy), deletedAt: null },
+        include: {
+          groupMentors: {
+            where: { deletedAt: null },
+            include: { group: true },
+          },
+        },
+      });
+
+      if (!scanner) {
+        return {
+          success: false,
+          code: "UNAUTHORIZED_SCANNER",
+          message: "Data akun pemindai tidak valid atau sudah dinonaktifkan.",
+        };
+      }
+
+      const isSupervisor = scanner.role === "admin" || scanner.role === "panitia";
+
+      if (!isSupervisor) {
+        // Scanner adalah mentor -> validasi berdasarkan tipe sesi (prodi vs grup)
+        if (session.attendanceType?.toLowerCase() === "prodi") {
+          // A. Sesi Berbasis Prodi (Pengambilan Atribut Kampus & Foto KTM)
+          const isAllowedProdi = canMentorScanProdi(scanner.prodi, maba.prodi);
+          if (!isAllowedProdi) {
+            const allowedProdis = getAllowedProdisForMentor(scanner.prodi);
+            return {
+              success: false,
+              code: "UNAUTHORIZED_PRODI",
+              message: `Akses ditolak: Mahasiswa ${maba.nama} (${maba.nim || maba.username}) berasal dari prodi ${maba.prodi || "Tidak Diketahui"}. Sebagai mentor ${scanner.prodi || "Tidak Diketahui"}, Anda hanya berwenang memindai: ${allowedProdis.join(", ")}.`,
+              data: {
+                maba: {
+                  id: maba.id,
+                  nama: maba.nama,
+                  nim: maba.nim,
+                  prodi: maba.prodi,
+                  group: maba.group ? { id: maba.group.id, name: maba.group.name } : null,
+                },
+                allowedProdis,
+                scannerProdi: scanner.prodi,
+              },
+            };
+          }
+        } else {
+          // B. Sesi Reguler Berbasis Kelompok (GROUP)
+          const isMentorOfGroup = scanner.groupMentors.some(
+            (gm) => gm.mGroupsId === maba.mGroupsId
+          );
+
+          if (!isMentorOfGroup) {
+            const mentoredNames = scanner.groupMentors.map((gm) => gm.group.name);
+            return {
+              success: false,
+              code: "UNAUTHORIZED_GROUP",
+              message: `Akses ditolak: Mahasiswa ${maba.nama} (${maba.nim || maba.username}) terdaftar di kelompok "${maba.group?.name || "Tanpa Kelompok"}". Anda hanya berhak memindai mahasiswa binaan Anda (${mentoredNames.length > 0 ? mentoredNames.join(", ") : "Tidak ada kelompok binaan aktif"}).`,
+              data: {
+                maba: {
+                  id: maba.id,
+                  nama: maba.nama,
+                  nim: maba.nim,
+                  prodi: maba.prodi,
+                  group: maba.group ? { id: maba.group.id, name: maba.group.name } : null,
+                },
+                mentoredGroups: mentoredNames,
+              },
+            };
+          }
+        }
+      }
+    }
+
+    // 5. Cek apakah sudah pernah presensi di sesi ini
     const existing = await this.checkAlreadyAttended(maba.id, session.id);
     if (existing) {
       const timeStr = existing.scannedAt
@@ -171,55 +253,88 @@ export class AttendanceModel {
         success: false,
         code: "ALREADY_ATTENDED",
         message: `Mahasiswa ${maba.nama} (${maba.nim || maba.username}) sudah tercatat presensi pada pukul ${timeStr} WIB (${existing.status}).`,
-        data: existing,
+        data: {
+          ...existing,
+          maba: {
+            id: maba.id,
+            nama: maba.nama,
+            nim: maba.nim,
+            prodi: maba.prodi,
+            group: maba.group ? { id: maba.group.id, name: maba.group.name } : null,
+          },
+        },
       };
     }
 
-    // 5. Hitung Batas Waktu Keterlambatan Presensi
+    // 6. Hitung Batas Waktu Keterlambatan Presensi
     // Mahasiswa tercatat "Hadir" (Tepat Waktu) jika presensi sebelum/hingga waktu selesai sesi + toleransi
     const toleranceMs = (session.toleransi ?? 0) * 60 * 1000;
     const maxOnTime = new Date(session.endSessions.getTime() + toleranceMs);
     const status = isTestSession || scanTime <= maxOnTime ? "Hadir" : "Terlambat";
 
-    // 6. Simpan ke database
-    const attendance = await prisma.attendance.create({
-      data: {
-        mabaId: maba.id,
-        scannedBy: scannedBy ?? null,
-        sessionsId: session.id,
-        groupsId: maba.mGroupsId,
-        scannedAt: scanTime,
-        status,
-      },
-      include: {
-        maba: {
-          select: {
-            id: true,
-            nama: true,
-            nim: true,
-            prodi: true,
-            group: true,
+    // 7. Simpan ke database (groupsId tetap merujuk ke kelompok asal maba)
+    try {
+      const attendance = await prisma.attendance.create({
+        data: {
+          mabaId: maba.id,
+          scannedBy: scannedBy ?? null,
+          sessionsId: session.id,
+          groupsId: maba.mGroupsId,
+          scannedAt: scanTime,
+          status,
+        },
+        include: {
+          maba: {
+            select: {
+              id: true,
+              nama: true,
+              nim: true,
+              prodi: true,
+              group: true,
+            },
+          },
+          session: true,
+          scanner: {
+            select: {
+              id: true,
+              nama: true,
+              role: true,
+            },
           },
         },
-        session: true,
-        scanner: {
-          select: {
-            id: true,
-            nama: true,
-            role: true,
+      });
+
+      const lateNotice = status === "Terlambat" ? " (Terlambat - Melebihi batas toleransi)" : " (Hadir - Tepat Waktu)";
+
+      return {
+        success: true,
+        code: "SUCCESS",
+        message: `Presensi berhasil dicatat: ${maba.nama}${lateNotice}.`,
+        data: attendance,
+      };
+    } catch (err: unknown) {
+      // Tangani Prisma Unique Constraint Violation (P2002) untuk kondisi balapan / race condition
+      const prismaError = err as { code?: string };
+      if (prismaError?.code === "P2002") {
+        const doubleCheck = await this.checkAlreadyAttended(maba.id, session.id);
+        return {
+          success: false,
+          code: "ALREADY_ATTENDED",
+          message: `Mahasiswa ${maba.nama} (${maba.nim || maba.username}) sudah tercatat presensi pada sesi ini.`,
+          data: {
+            ...doubleCheck,
+            maba: {
+              id: maba.id,
+              nama: maba.nama,
+              nim: maba.nim,
+              prodi: maba.prodi,
+              group: maba.group ? { id: maba.group.id, name: maba.group.name } : null,
+            },
           },
-        },
-      },
-    });
-
-    const lateNotice = status === "Terlambat" ? " (Terlambat - Melebihi batas toleransi)" : " (Hadir - Tepat Waktu)";
-
-    return {
-      success: true,
-      code: "SUCCESS",
-      message: `Presensi berhasil dicatat: ${maba.nama}${lateNotice}.`,
-      data: attendance,
-    };
+        };
+      }
+      throw err;
+    }
   }
 
   /**

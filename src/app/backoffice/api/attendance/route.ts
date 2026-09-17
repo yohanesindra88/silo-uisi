@@ -32,13 +32,14 @@ export async function GET(req: Request) {
       summary,
       data: attendances,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada GET /api/attendance:", error);
     return NextResponse.json(
       {
         success: false,
         message: "Gagal mengambil data riwayat presensi.",
-        error: error.message,
+        error: errorMessage,
       },
       { status: 500 }
     );
@@ -90,6 +91,9 @@ export async function POST(req: NextRequest) {
         SESSION_NOT_STARTED: 400,
         SESSION_ENDED: 400,
         ALREADY_ATTENDED: 409,
+        UNAUTHORIZED_GROUP: 403,
+        UNAUTHORIZED_PRODI: 403,
+        UNAUTHORIZED_SCANNER: 403,
       };
 
       return NextResponse.json(
@@ -112,14 +116,15 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada POST /api/attendance:", error);
     return NextResponse.json(
       {
         success: false,
         code: "SERVER_ERROR",
         message: "Terjadi kesalahan internal server saat memproses presensi.",
-        error: error.message,
+        error: errorMessage,
       },
       { status: 500 }
     );

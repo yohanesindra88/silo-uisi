@@ -22,9 +22,13 @@ import {
   FileSpreadsheet,
   PackageCheck,
   ChevronRight,
+  QrCode,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { formatDateTimeInput, parseDateTimeInput } from "@/utils/date";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 interface UserProfile {
   id: number;
@@ -35,6 +39,8 @@ interface UserProfile {
 interface SessionItem {
   id: number;
   name: string;
+  attendanceType?: string;
+  attendance_type?: string;
   start_sessions?: string;
   end_sessions?: string;
   startSessions?: string;
@@ -100,6 +106,7 @@ export default function AdminDashboardPage() {
 
   // Form Input States - Sesi Baru
   const [sessionName, setSessionName] = useState("");
+  const [sessionType, setSessionType] = useState<"grup" | "prodi">("grup");
   const [sessionStart, setSessionStart] = useState("");
   const [sessionEnd, setSessionEnd] = useState("");
   const [sessionTolerance, setSessionTolerance] = useState("15");
@@ -204,6 +211,19 @@ export default function AdminDashboardPage() {
       return;
     }
 
+    const startDate = parseDateTimeInput(sessionStart);
+    const endDate = parseDateTimeInput(sessionEnd);
+
+    if (!startDate || !endDate) {
+      setFormFeedback("Format waktu tidak valid. Gunakan format DD/MM/YY HH:mm (Contoh: 17/09/26 07:00)");
+      return;
+    }
+
+    if (endDate <= startDate) {
+      setFormFeedback("Waktu selesai harus lebih lambat daripada waktu mulai.");
+      return;
+    }
+
     setSubmitting(true);
     setFormFeedback(null);
 
@@ -213,8 +233,9 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: sessionName,
-          start_sessions: new Date(sessionStart).toISOString(),
-          end_sessions: new Date(sessionEnd).toISOString(),
+          attendance_type: sessionType,
+          start_sessions: startDate.toISOString(),
+          end_sessions: endDate.toISOString(),
           toleransi: Number(sessionTolerance) || 15,
         }),
       });
@@ -227,6 +248,7 @@ export default function AdminDashboardPage() {
 
       // Reset form
       setSessionName("");
+      setSessionType("grup");
       setSessionStart("");
       setSessionEnd("");
       setSessionTolerance("15");
@@ -264,8 +286,11 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           title: assignmentTitle,
           description: assignmentDesc,
+          dueDate: new Date(assignmentDueDate).toISOString(),
           due_date: new Date(assignmentDueDate).toISOString(),
+          attachmentUrl: assignmentUrl || undefined,
           attachment_url: assignmentUrl || undefined,
+          createdBy: user?.id,
           created_by: user?.id,
         }),
       });
@@ -423,6 +448,67 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Pintasan Cepat: Universal QR Scanner */}
+      <Link
+        href="/admin/scan"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "14px",
+          background: "linear-gradient(135deg, rgba(31, 75, 93, 0.08) 0%, rgba(104, 207, 235, 0.08) 100%)",
+          borderRadius: "18px",
+          padding: "16px 18px",
+          marginBottom: "12px",
+          border: "1.5px solid rgba(31, 75, 93, 0.2)",
+          textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(31, 75, 93, 0.05)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              backgroundColor: "#1F4B5D",
+              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(31, 75, 93, 0.25)",
+            }}
+          >
+            <QrCode size={22} color="#68CFEB" />
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1F1E19" }}>
+                Universal QR Scanner
+              </span>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 800,
+                  backgroundColor: "#0F766E",
+                  color: "#FFFFFF",
+                  padding: "2px 6px",
+                  borderRadius: "6px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Akses Penuh
+              </span>
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.75)", marginTop: "2px" }}>
+              Pindai presensi seluruh maba tanpa batasan kelompok atau prodi
+            </div>
+          </div>
+        </div>
+        <ChevronRight size={20} color="#1F4B5D" />
+      </Link>
+
       {/* Pintasan Cepat: Manajemen Atribut Maba */}
       <Link
         href="/admin/atribut"
@@ -515,6 +601,53 @@ export default function AdminDashboardPage() {
         </div>
 
         <ChevronRight size={20} color="#1F4B5D" />
+      </Link>
+
+      {/* Pintasan Cepat: Kelola & Rangkuman Penugasan */}
+      <Link
+        href="/admin/tugas"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "14px",
+          background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(31, 75, 93, 0.04) 100%)",
+          borderRadius: "18px",
+          padding: "16px 18px",
+          marginBottom: "18px",
+          border: "1.5px solid rgba(245, 158, 11, 0.25)",
+          textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(245, 158, 11, 0.04)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              backgroundColor: "#D97706",
+              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(217, 119, 6, 0.25)",
+            }}
+          >
+            <ClipboardList size={22} color="#FFFFFF" />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#1F4B5D" }}>
+              Kelola &amp; Rangkuman Penugasan
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.7)", marginTop: "2px" }}>
+              Pantau pengumpulan, evaluasi nilai maba &amp; buat tugas baru &rarr;
+            </div>
+          </div>
+        </div>
+
+        <ChevronRight size={20} color="#D97706" />
       </Link>
 
       {/* 2. Statistik Global Kehadiran & Tugas */}
@@ -648,14 +781,18 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Card Tugas Aktif */}
-        <div
+        {/* Card Tugas Aktif (Klik untuk menuju Rangkuman Tugas) */}
+        <Link
+          href="/admin/tugas"
           style={{
             backgroundColor: "#FFFFFF",
             padding: "16px",
             borderRadius: "16px",
             border: "1px solid rgba(31, 75, 93, 0.08)",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
+            textDecoration: "none",
+            display: "block",
+            cursor: "pointer",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
@@ -681,9 +818,9 @@ export default function AdminDashboardPage() {
             {stats.totalAssignments} Modul
           </div>
           <div style={{ fontSize: "0.7rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px" }}>
-            Dipantau Tim Mentor
+            Klik untuk lihat rangkuman &rarr;
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* 3. Daftar Sesi Kegiatan Terbaru */}
@@ -715,42 +852,59 @@ export default function AdminDashboardPage() {
               Belum ada sesi kegiatan. Klik tombol (+) di bawah untuk membuat sesi baru.
             </div>
           ) : (
-            sessions.slice(0, 4).map((sess) => (
-              <div
-                key={sess.id}
-                style={{
-                  padding: "12px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(31, 75, 93, 0.02)",
-                  border: "1px solid rgba(31, 75, 93, 0.06)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#1F1E19" }}>
-                    {sess.name}
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.6)" }}>
-                    {formatSessionDate((sess as any).startSessions || sess.start_sessions)} • Mulai: {formatSessionTime((sess as any).startSessions || sess.start_sessions)} • Tol. {sess.toleransi} mnt
-                  </div>
-                </div>
-
-                <span
+            sessions.slice(0, 4).map((sess) => {
+              const isP = (sess.attendance_type || sess.attendanceType) === "prodi";
+              return (
+                <div
+                  key={sess.id}
                   style={{
-                    padding: "4px 8px",
-                    borderRadius: "999px",
-                    backgroundColor: sess.is_active ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.1)",
-                    color: sess.is_active ? "#059669" : "#64748B",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
+                    padding: "12px",
+                    borderRadius: "12px",
+                    backgroundColor: "rgba(31, 75, 93, 0.02)",
+                    border: "1px solid rgba(31, 75, 93, 0.06)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
                 >
-                  {sess.is_active ? "Berlangsung" : "Selesai"}
-                </span>
-              </div>
-            ))
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "#1F1E19" }}>
+                        {sess.name}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.65rem",
+                          fontWeight: 800,
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          backgroundColor: isP ? "rgba(124, 58, 237, 0.12)" : "rgba(14, 165, 233, 0.12)",
+                          color: isP ? "#7C3AED" : "#0284C7",
+                        }}
+                      >
+                        {isP ? "🎓 Prodi" : "👥 Kelompok"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px" }}>
+                      {formatSessionDate((sess as any).startSessions || sess.start_sessions)} • Mulai: {formatSessionTime((sess as any).startSessions || sess.start_sessions)} • Tol. {sess.toleransi} mnt
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "999px",
+                      backgroundColor: sess.is_active ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.1)",
+                      color: sess.is_active ? "#059669" : "#64748B",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {sess.is_active ? "Berlangsung" : "Selesai"}
+                  </span>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -810,7 +964,14 @@ export default function AdminDashboardPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "6px 0 16px" }}>
             <button
               type="button"
-              onClick={() => setActiveForm("session")}
+              onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getTime() + 10 * 60 * 1000);
+                const end = new Date(start.getTime() + 120 * 60 * 1000);
+                setSessionStart(formatDateTimeInput(start));
+                setSessionEnd(formatDateTimeInput(end));
+                setActiveForm("session");
+              }}
               style={{
                 padding: "16px",
                 borderRadius: "14px",
@@ -923,42 +1084,32 @@ export default function AdminDashboardPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
-                  Jam Mulai:
+                  Jam Mulai: <span style={{ color: "#DC2626" }}>*</span>
                 </label>
-                <input
-                  type="datetime-local"
-                  value={sessionStart}
-                  onChange={(e) => setSessionStart(e.target.value)}
+                <DateTimePicker
                   required
-                  style={{
-                    width: "100%",
-                    padding: "10px 8px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(31, 75, 93, 0.2)",
-                    fontSize: "0.8rem",
-                    boxSizing: "border-box",
-                  }}
+                  placeholder="DD/MM/YY HH:mm"
+                  value={sessionStart}
+                  onChange={setSessionStart}
                 />
+                <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
+                  Format: DD/MM/YY HH:mm
+                </span>
               </div>
 
               <div>
                 <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
-                  Jam Selesai:
+                  Jam Selesai: <span style={{ color: "#DC2626" }}>*</span>
                 </label>
-                <input
-                  type="datetime-local"
-                  value={sessionEnd}
-                  onChange={(e) => setSessionEnd(e.target.value)}
+                <DateTimePicker
                   required
-                  style={{
-                    width: "100%",
-                    padding: "10px 8px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(31, 75, 93, 0.2)",
-                    fontSize: "0.8rem",
-                    boxSizing: "border-box",
-                  }}
+                  placeholder="DD/MM/YY HH:mm"
+                  value={sessionEnd}
+                  onChange={setSessionEnd}
                 />
+                <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
+                  Format: DD/MM/YY HH:mm
+                </span>
               </div>
             </div>
 
@@ -981,6 +1132,30 @@ export default function AdminDashboardPage() {
                   boxSizing: "border-box",
                 }}
               />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
+                Basis Otorisasi Presensi (Tipe Sesi):
+              </label>
+              <select
+                value={sessionType}
+                onChange={(e) => setSessionType(e.target.value === "prodi" ? "prodi" : "grup")}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(31, 75, 93, 0.2)",
+                  fontSize: "0.85rem",
+                  boxSizing: "border-box",
+                  backgroundColor: "#FAFAFA",
+                  color: "#1F1E19",
+                  fontWeight: 600,
+                }}
+              >
+                <option value="grup">👥 Kelompok</option>
+                <option value="prodi">🎓 Prodi</option>
+              </select>
             </div>
 
             <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>

@@ -27,6 +27,8 @@ interface UserProfile {
 interface SessionItem {
   id: number;
   name: string;
+  attendanceType?: string;
+  attendance_type?: string;
   start_sessions?: string;
   end_sessions?: string;
   startSessions?: string;
@@ -49,10 +51,13 @@ interface AttendanceRow {
   id: string;
   nim: string;
   nama: string;
+  prodi?: string;
   groupName: string;
   groupId?: number;
   sessionName: string;
   sessionId: number;
+  sessionAttendanceType?: "grup" | "prodi";
+  sessionKeterangan?: "Kelompok" | "Prodi";
   scanTime: string;
   status: "Hadir" | "Terlambat" | "Tidak Hadir" | "Belum Hadir" | string;
 }
@@ -132,14 +137,21 @@ export default function MentorMonitoringPage() {
         const recordId = att.id || `${att.mabaId || mabaUser?.id || idx}-${att.sessionsId || att.sessionId || idx}`;
         const sId = att.sessionsId || att.sessionId || att.session?.id;
 
+        const sessObj = sessList.find((s) => s.id === sId);
+        const rawT = sessObj?.attendance_type || sessObj?.attendanceType || att.session?.attendance_type || att.session?.attendanceType;
+        const isSessP = rawT === "prodi";
+
         rows.push({
           id: `att-${recordId}`,
           nim: mabaUser?.nim || mabaUser?.username || "-",
           nama: mabaUser?.nama || "Mahasiswa",
+          prodi: mabaUser?.prodi || "-",
           groupName: mabaUser?.group?.name || "Kelompok Binaan",
           groupId: gId,
-          sessionName: att.session?.name || "Sesi",
+          sessionName: att.session?.name || sessObj?.name || "Sesi",
           sessionId: sId,
+          sessionAttendanceType: isSessP ? "prodi" : "grup",
+          sessionKeterangan: isSessP ? "Prodi" : "Kelompok",
           scanTime: att.createdAt || att.scannedAt ? new Date(att.createdAt || att.scannedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-",
           status: att.status || "Hadir",
         });
@@ -148,6 +160,7 @@ export default function MentorMonitoringPage() {
       // Tambahkan baris Tidak Hadir (jika sesi selesai) atau Belum Hadir (jika sesi belum selesai) untuk maba binaan yang belum scan
       const now = new Date();
       sessList.forEach((sess) => {
+        const isSessP = (sess.attendance_type || sess.attendanceType) === "prodi";
         const endVal = sess.endSessions || sess.end_sessions;
         const isEnded = endVal ? now > new Date(endVal) : false;
         const unattStatus = isEnded ? "Tidak Hadir" : "Belum Hadir";
@@ -159,10 +172,13 @@ export default function MentorMonitoringPage() {
               id: `unatt-${m.nim || m.id}-${sess.id}`,
               nim: m.nim || m.username || "-",
               nama: m.nama,
+              prodi: m.prodi || "-",
               groupName: m.group?.name || "Kelompok Binaan",
               groupId: m.mGroupsId || m.group?.id,
               sessionName: sess.name,
               sessionId: sess.id,
+              sessionAttendanceType: isSessP ? "prodi" : "grup",
+              sessionKeterangan: isSessP ? "Prodi" : "Kelompok",
               scanTime: "-",
               status: unattStatus,
             });
@@ -333,9 +349,10 @@ export default function MentorMonitoringPage() {
               <option value="all">Semua Sesi</option>
               {sessions.map((s) => {
                 const startVal = s.startSessions || s.start_sessions;
+                const isP = (s.attendance_type || s.attendanceType) === "prodi";
                 return (
                   <option key={s.id} value={String(s.id)}>
-                    {s.name} ({formatSessionDate(startVal)})
+                    {isP ? "🎓 [Prodi] " : "👥 [Kelompok] "}{s.name} ({formatSessionDate(startVal)})
                   </option>
                 );
               })}
@@ -404,7 +421,9 @@ export default function MentorMonitoringPage() {
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1F1E19" }}>{row.nama}</div>
-                    <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.65)" }}>NIM: {row.nim} • {row.groupName}</div>
+                    <div style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.65)" }}>
+                      NIM: {row.nim} • {row.sessionKeterangan === "Prodi" ? `Prodi: ${row.prodi}` : `Kelompok: ${row.groupName}`}
+                    </div>
                   </div>
                   <span style={{ padding: "4px 8px", borderRadius: "999px", backgroundColor: badgeBg, color: badgeColor, fontSize: "0.7rem", fontWeight: 700 }}>
                     {row.status}
@@ -412,7 +431,7 @@ export default function MentorMonitoringPage() {
                 </div>
 
                 <div style={{ padding: "6px 10px", borderRadius: "8px", backgroundColor: "rgba(31, 75, 93, 0.03)", display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#0F766E" }}>
-                  <span>Sesi: {row.sessionName}</span>
+                  <span>Sesi: {row.sessionName} ({row.sessionKeterangan || "Kelompok"})</span>
                   <span>Scan: {row.scanTime}</span>
                 </div>
               </div>

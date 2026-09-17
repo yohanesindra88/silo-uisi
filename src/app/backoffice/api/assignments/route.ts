@@ -12,13 +12,14 @@ export async function GET(req: Request) {
       success: true,
       data: assignments,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada GET /api/assignments:", error);
     return NextResponse.json(
       {
         success: false,
         message: "Gagal mengambil daftar penugasan.",
-        error: error.message,
+        error: errorMessage,
       },
       { status: 500 }
     );
@@ -28,7 +29,11 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, description, attachmentUrl, dueDate, createdBy } = body;
+    const dueDate = body.dueDate || body.due_date;
+    const attachmentUrl = body.attachmentUrl !== undefined ? body.attachmentUrl : body.attachment_url;
+    const createdBy = body.createdBy || body.created_by;
+    const title = body.title;
+    const description = body.description;
 
     if (!title || !dueDate) {
       return NextResponse.json(
@@ -56,13 +61,14 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada POST /api/assignments:", error);
     return NextResponse.json(
       {
         success: false,
         message: "Gagal membuat penugasan.",
-        error: error.message,
+        error: errorMessage,
       },
       { status: 500 }
     );

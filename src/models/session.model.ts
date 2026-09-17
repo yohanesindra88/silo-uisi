@@ -1,5 +1,6 @@
 import { prisma } from "@/utils/prisma";
 import type { Session, Prisma } from "@prisma/client";
+import { normalizeAttendanceType } from "@/config/attendance";
 
 export class SessionModel {
   /**
@@ -25,12 +26,13 @@ export class SessionModel {
   }
 
   /**
-   * Mengambil sesi yang sedang berlangsung atau belum berakhir
+   * Mengambil sesi yang sedang berlangsung saat ini (startSessions <= now <= endSessions)
    */
   static async getActiveSessions(now: Date = new Date()) {
     return prisma.session.findMany({
       where: {
         deletedAt: null,
+        startSessions: { lte: now },
         endSessions: { gte: now },
       },
       orderBy: { startSessions: "asc" },
@@ -89,15 +91,19 @@ export class SessionModel {
   static async upsert(data: {
     id?: number;
     name: string;
+    attendanceType?: string;
     startSessions: Date;
     endSessions: Date;
     toleransi?: number;
   }): Promise<Session> {
+    const attendanceType = normalizeAttendanceType(data.attendanceType);
+
     if (data.id) {
       return prisma.session.upsert({
         where: { id: data.id },
         update: {
           name: data.name,
+          attendanceType,
           startSessions: data.startSessions,
           endSessions: data.endSessions,
           toleransi: data.toleransi ?? 0,
@@ -106,6 +112,7 @@ export class SessionModel {
         create: {
           id: data.id,
           name: data.name,
+          attendanceType,
           startSessions: data.startSessions,
           endSessions: data.endSessions,
           toleransi: data.toleransi ?? 0,
@@ -121,6 +128,7 @@ export class SessionModel {
       return prisma.session.update({
         where: { id: existing.id },
         data: {
+          attendanceType,
           startSessions: data.startSessions,
           endSessions: data.endSessions,
           toleransi: data.toleransi ?? 0,
@@ -132,6 +140,7 @@ export class SessionModel {
     return prisma.session.create({
       data: {
         name: data.name,
+        attendanceType,
         startSessions: data.startSessions,
         endSessions: data.endSessions,
         toleransi: data.toleransi ?? 0,

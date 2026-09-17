@@ -28,14 +28,15 @@ model Group {
 
 // 2. Tabel: m_sessions (Sesi Absensi / Kegiatan)
 model Session {
-  id            Int       @id @default(autoincrement())
-  name          String    @db.VarChar(45)
-  startSessions DateTime  @map("start_sessions") @db.Timestamp(6)
-  endSessions   DateTime  @map("end_sessions") @db.Timestamp(6)
-  toleransi     Int?      @default(0)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamp(6)
+  id             Int       @id @default(autoincrement())
+  name           String    @db.VarChar(45)
+  attendanceType String    @default("grup") @map("attendance_type") @db.VarChar(30)
+  startSessions  DateTime  @map("start_sessions") @db.Timestamp(6)
+  endSessions    DateTime  @map("end_sessions") @db.Timestamp(6)
+  toleransi      Int?      @default(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
 
   attendances Attendance[]
 
@@ -108,6 +109,7 @@ model Attendance {
   session Session @relation(fields: [sessionsId], references: [id], onDelete: Cascade)
   group   Group?  @relation(fields: [groupsId], references: [id], onDelete: SetNull)
 
+  @@unique([mabaId, sessionsId], map: "uq_attendances_maba_session")
   @@index([mabaId], map: "idx_attendances_maba_id")
   @@index([sessionsId], map: "idx_attendances_sessions_id")
   @@index([groupsId], map: "idx_attendances_groups_id")
