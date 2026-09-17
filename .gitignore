@@ -53,3 +53,10 @@ next-env.d.ts
 
 # generated media variants (dibangkitkan scripts/gen-variants.ts)
 /public/_m/
+
+# AI agent docs
+AGENTS.md
+agents.md
+AGENT.md
+CLAUDE.md
+claude.md
