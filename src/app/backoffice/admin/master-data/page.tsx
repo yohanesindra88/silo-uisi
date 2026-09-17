@@ -8,6 +8,9 @@ import { ImportDropzone } from "@/components/admin/ImportDropzone";
 import { ImportSummaryCard } from "@/components/admin/ImportSummaryCard";
 import { ImportPreviewTable } from "@/components/admin/ImportPreviewTable";
 import { ImportSuccessModal } from "@/components/admin/ImportSuccessModal";
+import { ImportEditModal } from "@/components/admin/ImportEditModal";
+import { ImportDeleteModal } from "@/components/admin/ImportDeleteModal";
+import { ImportFeedbackModal } from "@/components/admin/ImportFeedbackModal";
 import {
   Users,
   Layers,
@@ -73,6 +76,29 @@ export default function AdminMasterDataPage() {
   // Modal Sukses
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [importResult, setImportResult] = useState<ImportResultData | null>(null);
+
+  // Modal Edit & Delete Baris State
+  const [activeActionRow, setActiveActionRow] = useState<{
+    row: RowValidationResult<GroupImportRow | UserImportRow>;
+    isExistingInDb: boolean;
+  } | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Modal Feedback Hasil Aksi (Sukses / Error Notifikasi)
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+    actionType?: "delete_db" | "delete_preview" | "edit_db" | "edit_preview";
+    targetName?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
   // 1. Validasi Autentikasi Pengguna
   useEffect(() => {
@@ -227,6 +253,239 @@ export default function AdminMasterDataPage() {
     }
   };
 
+  // 4. Handler untuk menyimpan hasil edit data baris
+  const handleSaveEditRow = async (
+    updatedData: GroupImportRow | UserImportRow,
+    saveDirectlyToDb: boolean
+  ) => {
+    if (!activeActionRow || !previewData) return;
+
+    const targetRowNumber = activeActionRow.row.rowNumber;
+
+    if (saveDirectlyToDb) {
+      const identifier =
+        activeTab === "groups"
+          ? (activeActionRow.row.data as GroupImportRow).nama_kelompok
+          : (activeActionRow.row.data as UserImportRow).username;
+
+      const res = await fetch("/api/admin/import/manage-existing", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: activeTab,
+          identifier,
+          data: updatedData,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Gagal memperbarui data di database.");
+      }
+    }
+
+    // Perbarui data pada state baris lokal
+    const newRows = previewData.rows.map((r) => {
+      if (r.rowNumber !== targetRowNumber) return r;
+
+      if (saveDirectlyToDb) {
+        return {
+          ...r,
+          data: updatedData,
+          status: "VALID" as const,
+          warnings: ["Data berhasil disinkronkan ke database."],
+          isValid: true,
+        };
+      }
+
+      // Jika diperbarui di antrean impor saja:
+      const oldIdentifier =
+        activeTab === "groups"
+          ? (r.data as GroupImportRow).nama_kelompok
+          : (r.data as UserImportRow).username;
+      const newIdentifier =
+        activeTab === "groups"
+          ? (updatedData as GroupImportRow).nama_kelompok
+          : (updatedData as UserImportRow).username;
+
+      const filteredWarnings =
+        oldIdentifier !== newIdentifier
+          ? r.warnings.filter(
+              (w) =>
+                !w.toLowerCase().includes("sudah ada di database") &&
+                !w.toLowerCase().includes("sudah terdaftar pada pengguna lain")
+            )
+          : r.warnings;
+
+      return {
+        ...r,
+        data: updatedData,
+        status:
+          r.errors.length > 0
+            ? ("ERROR" as const)
+            : filteredWarnings.length > 0
+            ? ("WARNING" as const)
+            : ("VALID" as const),
+        warnings: filteredWarnings,
+        isValid: r.errors.length === 0,
+      };
+    });
+
+    const newValidCount = newRows.filter((r) => r.isValid).length;
+    const newErrorCount = newRows.filter((r) => r.status === "ERROR").length;
+    const newWarningCount = newRows.filter((r) => r.status === "WARNING").length;
+
+    setPreviewData({
+      ...previewData,
+      summary: {
+        totalRows: newRows.length,
+        validCount: newValidCount,
+        errorCount: newErrorCount,
+        warningCount: newWarningCount,
+      },
+      rows: newRows,
+    });
+
+    setFeedback({
+      type: "success",
+      message: saveDirectlyToDb
+        ? "Data berhasil diperbarui di database dan antrean impor."
+        : `Baris #${targetRowNumber} berhasil diperbarui di antrean impor.`,
+    });
+
+    const targetName =
+      activeTab === "groups"
+        ? (updatedData as GroupImportRow).nama_kelompok
+        : (updatedData as UserImportRow).nama || (updatedData as UserImportRow).username;
+
+    setFeedbackModal({
+      isOpen: true,
+      title: saveDirectlyToDb
+        ? "Berhasil Disimpan ke Database!"
+        : "Data Baris Berhasil Diperbarui!",
+      message: saveDirectlyToDb
+        ? `Perubahan data "${targetName}" telah berhasil disimpan langsung ke database dan disinkronkan ke tabel antrean impor.`
+        : `Baris #${targetRowNumber} (${targetName}) berhasil diperbarui pada antrean impor.`,
+      type: "success",
+      actionType: saveDirectlyToDb ? "edit_db" : "edit_preview",
+      targetName,
+    });
+  };
+
+  // 5. Handler menghapus baris dari antrean impor saja
+  const handleDeleteFromPreview = () => {
+    if (!activeActionRow || !previewData) return;
+    const targetRowNumber = activeActionRow.row.rowNumber;
+
+    const identifier =
+      activeTab === "groups"
+        ? (activeActionRow.row.data as GroupImportRow).nama_kelompok
+        : (activeActionRow.row.data as UserImportRow).nama ||
+          (activeActionRow.row.data as UserImportRow).username;
+
+    const newRows = previewData.rows.filter((r) => r.rowNumber !== targetRowNumber);
+    const newValidCount = newRows.filter((r) => r.isValid).length;
+    const newErrorCount = newRows.filter((r) => r.status === "ERROR").length;
+    const newWarningCount = newRows.filter((r) => r.status === "WARNING").length;
+
+    setPreviewData({
+      ...previewData,
+      summary: {
+        totalRows: newRows.length,
+        validCount: newValidCount,
+        errorCount: newErrorCount,
+        warningCount: newWarningCount,
+      },
+      rows: newRows,
+    });
+
+    setFeedback({
+      type: "success",
+      message: `Baris #${targetRowNumber} berhasil dihapus dari antrean impor.`,
+    });
+
+    setFeedbackModal({
+      isOpen: true,
+      title: "Dihapus dari Antrean Impor",
+      message: `Baris #${targetRowNumber} (${identifier}) telah berhasil dikeluarkan dari daftar impor saat ini. Data yang tersimpan di dalam database tetap aman dan tidak diubah.`,
+      type: "info",
+      actionType: "delete_preview",
+      targetName: identifier,
+    });
+  };
+
+  // 6. Handler menghapus data eksisting dari database
+  const handleDeleteFromDb = async () => {
+    if (!activeActionRow || !previewData) return;
+
+    const identifier =
+      activeTab === "groups"
+        ? (activeActionRow.row.data as GroupImportRow).nama_kelompok
+        : (activeActionRow.row.data as UserImportRow).username;
+
+    const res = await fetch("/api/admin/import/manage-existing", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: activeTab,
+        identifier,
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || "Gagal menghapus data dari database.");
+    }
+
+    // Update status baris: karena di database sudah dihapus, maka baris ini menjadi data baru yang VALID
+    const targetRowNumber = activeActionRow.row.rowNumber;
+    const newRows = previewData.rows.map((r) => {
+      if (r.rowNumber !== targetRowNumber) return r;
+
+      const filteredWarnings = r.warnings.filter(
+        (w) =>
+          !w.toLowerCase().includes("sudah ada di database") &&
+          !w.toLowerCase().includes("sudah terdaftar pada pengguna lain")
+      );
+
+      return {
+        ...r,
+        status: r.errors.length > 0 ? ("ERROR" as const) : ("VALID" as const),
+        warnings: filteredWarnings,
+        isValid: r.errors.length === 0,
+      };
+    });
+
+    const newValidCount = newRows.filter((r) => r.isValid).length;
+    const newErrorCount = newRows.filter((r) => r.status === "ERROR").length;
+    const newWarningCount = newRows.filter((r) => r.status === "WARNING").length;
+
+    setPreviewData({
+      ...previewData,
+      summary: {
+        totalRows: newRows.length,
+        validCount: newValidCount,
+        errorCount: newErrorCount,
+        warningCount: newWarningCount,
+      },
+      rows: newRows,
+    });
+
+    setFeedback({
+      type: "success",
+      message: `Data '${identifier}' berhasil dihapus dari database! Baris impor kini siap diimpor sebagai data baru.`,
+    });
+
+    setFeedbackModal({
+      isOpen: true,
+      title: "Data Berhasil Dihapus dari Database!",
+      message: `Data "${identifier}" telah berhasil dihapus dari database sistem. Baris pada tabel impor kini otomatis berubah menjadi data baru yang VALID (siap diimpor).`,
+      type: "success",
+      actionType: "delete_db",
+      targetName: identifier,
+    });
+  };
+
   if (loading) {
     return <LoadingScreen message="Memuat panel Master Data..." />;
   }
@@ -298,67 +557,68 @@ export default function AdminMasterDataPage() {
           </div>
         </div>
 
-        {/* Tab Switcher (Desain Pill Modern) */}
-        <div
-          style={{
-            display: "inline-flex",
-            padding: "5px",
-            backgroundColor: "rgba(31, 75, 93, 0.08)",
-            borderRadius: "18px",
-            marginBottom: "20px",
-            width: "100%",
-            maxWidth: "460px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => handleTabChange("users")}
+        {/* Tab Switcher (Desain Pill Modern - Centered) */}
+        <div style={{ display: "flex", justifyContent: "center", width: "100%", marginBottom: "22px" }}>
+          <div
             style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "11px 16px",
-              borderRadius: "14px",
-              fontSize: "0.82rem",
-              fontWeight: 800,
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              backgroundColor: activeTab === "users" ? "#FFFFFF" : "transparent",
-              color: activeTab === "users" ? "#0F766E" : "#1F4B5D",
-              boxShadow: activeTab === "users" ? "0 3px 10px rgba(0, 0, 0, 0.08)" : "none",
+              display: "inline-flex",
+              padding: "5px",
+              backgroundColor: "rgba(31, 75, 93, 0.08)",
+              borderRadius: "18px",
+              width: "100%",
+              maxWidth: "480px",
             }}
           >
-            <Users size={17} />
-            <span>Master Pengguna (Akun)</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("users")}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                padding: "11px 16px",
+                borderRadius: "14px",
+                fontSize: "0.82rem",
+                fontWeight: 800,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                backgroundColor: activeTab === "users" ? "#FFFFFF" : "transparent",
+                color: activeTab === "users" ? "#0F766E" : "#1F4B5D",
+                boxShadow: activeTab === "users" ? "0 3px 10px rgba(0, 0, 0, 0.08)" : "none",
+              }}
+            >
+              <Users size={17} />
+              <span>Master Pengguna (Akun)</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange("groups")}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "11px 16px",
-              borderRadius: "14px",
-              fontSize: "0.82rem",
-              fontWeight: 800,
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              backgroundColor: activeTab === "groups" ? "#FFFFFF" : "transparent",
-              color: activeTab === "groups" ? "#0F766E" : "#1F4B5D",
-              boxShadow: activeTab === "groups" ? "0 3px 10px rgba(0, 0, 0, 0.08)" : "none",
-            }}
-          >
-            <Layers size={17} />
-            <span>Master Kelompok</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("groups")}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                padding: "11px 16px",
+                borderRadius: "14px",
+                fontSize: "0.82rem",
+                fontWeight: 800,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                backgroundColor: activeTab === "groups" ? "#FFFFFF" : "transparent",
+                color: activeTab === "groups" ? "#0F766E" : "#1F4B5D",
+                boxShadow: activeTab === "groups" ? "0 3px 10px rgba(0, 0, 0, 0.08)" : "none",
+              }}
+            >
+              <Layers size={17} />
+              <span>Master Kelompok</span>
+            </button>
+          </div>
         </div>
 
         {/* Feedback Alert Toast */}
@@ -438,7 +698,18 @@ export default function AdminMasterDataPage() {
             />
 
             {/* Tabel Preview */}
-            <ImportPreviewTable type={activeTab} rows={previewData.rows} />
+            <ImportPreviewTable
+              type={activeTab}
+              rows={previewData.rows}
+              onEditRow={(row, isExistingInDb) => {
+                setActiveActionRow({ row, isExistingInDb });
+                setIsEditModalOpen(true);
+              }}
+              onDeleteRow={(row, isExistingInDb) => {
+                setActiveActionRow({ row, isExistingInDb });
+                setIsDeleteModalOpen(true);
+              }}
+            />
 
             {/* Action Bar / Panel Konfirmasi Commit */}
             <div
@@ -576,6 +847,52 @@ export default function AdminMasterDataPage() {
         onClose={() => setIsSuccessModalOpen(false)}
         type={activeTab}
         result={importResult}
+      />
+
+      {/* Modal Edit Baris Data */}
+      <ImportEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setActiveActionRow(null);
+        }}
+        type={activeTab}
+        rowNumber={activeActionRow?.row.rowNumber || 0}
+        initialData={activeActionRow?.row.data || null}
+        isExistingInDb={activeActionRow?.isExistingInDb || false}
+        onSaveRow={handleSaveEditRow}
+      />
+
+      {/* Modal Hapus Baris Data */}
+      <ImportDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setActiveActionRow(null);
+        }}
+        type={activeTab}
+        rowNumber={activeActionRow?.row.rowNumber || 0}
+        identifier={
+          activeTab === "groups"
+            ? (activeActionRow?.row.data as GroupImportRow)?.nama_kelompok || ""
+            : (activeActionRow?.row.data as UserImportRow)?.nama ||
+              (activeActionRow?.row.data as UserImportRow)?.username ||
+              ""
+        }
+        isExistingInDb={activeActionRow?.isExistingInDb || false}
+        onDeleteFromPreview={handleDeleteFromPreview}
+        onDeleteFromDb={activeActionRow?.isExistingInDb ? handleDeleteFromDb : undefined}
+      />
+
+      {/* Modal Feedback Notifikasi Hasil Aksi */}
+      <ImportFeedbackModal
+        isOpen={feedbackModal.isOpen}
+        onClose={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        type={feedbackModal.type}
+        actionType={feedbackModal.actionType}
+        targetName={feedbackModal.targetName}
       />
     </MobileShell>
   );

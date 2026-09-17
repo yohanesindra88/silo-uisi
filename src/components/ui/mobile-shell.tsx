@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Home, QrCode, ClipboardList, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Home, QrCode, ClipboardList, Calendar, User as UserIcon } from "lucide-react";
 import LowPolyBackground from "@/app/components/LowPolyBackground";
 import styles from "./mobile-shell.module.css";
 
@@ -50,7 +50,8 @@ export const MobileShell: React.FC<MobileShellProps> = ({
     } else if (userRole === "admin" || userRole === "panitia") {
       return [
         { label: "Home", href: "/admin", icon: Home },
-        { label: "Sesi", href: "/admin/sessions", icon: QrCode },
+        { label: "Sesi", href: "/admin/sessions", icon: Calendar },
+        { label: "Scan QR", href: "/admin/scan", icon: QrCode },
         { label: "Tugas", href: "/admin/tugas", icon: ClipboardList },
         { label: "Profil", href: "/admin/profile", icon: UserIcon },
       ];

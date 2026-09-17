@@ -2,14 +2,27 @@
 
 import React, { useState } from "react";
 import { RowValidationResult, GroupImportRow, UserImportRow } from "@/controllers/import.controller";
-import { CheckCircle2, AlertTriangle, XCircle, KeyRound } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, KeyRound, Pencil, Trash2 } from "lucide-react";
 
 interface ImportPreviewTableProps {
   type: "groups" | "users";
   rows: RowValidationResult<GroupImportRow | UserImportRow>[];
+  onEditRow?: (
+    row: RowValidationResult<GroupImportRow | UserImportRow>,
+    isExistingInDb: boolean
+  ) => void;
+  onDeleteRow?: (
+    row: RowValidationResult<GroupImportRow | UserImportRow>,
+    isExistingInDb: boolean
+  ) => void;
 }
 
-export const ImportPreviewTable: React.FC<ImportPreviewTableProps> = ({ type, rows }) => {
+export const ImportPreviewTable: React.FC<ImportPreviewTableProps> = ({
+  type,
+  rows,
+  onEditRow,
+  onDeleteRow,
+}) => {
   const [filter, setFilter] = useState<"all" | "valid" | "invalid">("all");
 
   const filteredRows = rows.filter((r) => {
@@ -156,13 +169,14 @@ export const ImportPreviewTable: React.FC<ImportPreviewTableProps> = ({ type, ro
                 </>
               )}
               <th style={{ padding: "12px 14px" }}>Validasi / Keterangan</th>
+              <th style={{ padding: "12px 14px", textAlign: "center", width: "135px" }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filteredRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={type === "groups" ? 5 : 9}
+                  colSpan={type === "groups" ? 6 : 10}
                   style={{ padding: "36px 16px", textAlign: "center", color: "#94A3B8", fontWeight: 600 }}
                 >
                   Tidak ada data yang cocok dengan filter yang dipilih.
@@ -172,6 +186,13 @@ export const ImportPreviewTable: React.FC<ImportPreviewTableProps> = ({ type, ro
               filteredRows.map((r) => {
                 const groupData = r.data as GroupImportRow;
                 const userData = r.data as UserImportRow;
+                const isExistingInDb =
+                  r.status === "WARNING" &&
+                  r.warnings.some(
+                    (w) =>
+                      w.toLowerCase().includes("sudah ada di database") ||
+                      w.toLowerCase().includes("sudah terdaftar pada pengguna lain di database")
+                  );
 
                 const rowBg =
                   r.status === "ERROR"
@@ -375,6 +396,61 @@ export const ImportPreviewTable: React.FC<ImportPreviewTableProps> = ({ type, ro
                         <span style={{ color: "#059669", fontWeight: 600, fontSize: "0.76rem" }}>
                           Siap diimpor
                         </span>
+                      )}
+                    </td>
+
+                    {/* Kolom Aksi (Hanya tampil untuk data yang berstatus UPDATE / sudah ada di DB) */}
+                    <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                      {isExistingInDb ? (
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                          <button
+                            type="button"
+                            onClick={() => onEditRow?.(r, isExistingInDb)}
+                            title="Edit data yang sudah ada di database ini"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "5px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(15, 118, 110, 0.25)",
+                              backgroundColor: "#F0FDFA",
+                              color: "#0F766E",
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <Pencil size={12} />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onDeleteRow?.(r, isExistingInDb)}
+                            title="Hapus data dari database atau antrean"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "5px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(220, 38, 38, 0.3)",
+                              backgroundColor: "#FEF2F2",
+                              color: "#DC2626",
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <Trash2 size={12} />
+                            <span>Hapus</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ color: "#CBD5E1", fontSize: "0.85rem", fontWeight: 600 }}>-</span>
                       )}
                     </td>
                   </tr>

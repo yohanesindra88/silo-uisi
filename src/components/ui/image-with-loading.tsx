@@ -27,17 +27,21 @@ export const ImageWithLoading: React.FC<ImageWithLoadingProps> = ({
   onError,
   ...restProps
 }) => {
+  const [prevSrc, setPrevSrc] = useState(src);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
-  const [imgSrc, setImgSrc] = useState<string | undefined>(src);
+  const [imgSrc, setImgSrc] = useState<string | undefined>(
+    typeof src === "string" ? src : undefined
+  );
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  // Update image source when prop changes
-  useEffect(() => {
-    setImgSrc(src);
+  // Update image source when prop changes (React recommended pattern without effect)
+  if (src !== prevSrc) {
+    setPrevSrc(src);
+    setImgSrc(typeof src === "string" ? src : undefined);
     setIsLoaded(false);
     setHasError(false);
-  }, [src]);
+  }
 
   // Check if image is already cached/complete on mount
   useEffect(() => {
@@ -50,7 +54,7 @@ export const ImageWithLoading: React.FC<ImageWithLoadingProps> = ({
     setIsLoaded(true);
     setHasError(false);
     if (onLoad) {
-      onLoad(e as any);
+      onLoad(e);
     }
   };
 
@@ -62,7 +66,7 @@ export const ImageWithLoading: React.FC<ImageWithLoadingProps> = ({
       setIsLoaded(true); // Stop loading animation on error
     }
     if (onError) {
-      onError(e as any);
+      onError(e);
     }
   };
 

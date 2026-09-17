@@ -84,7 +84,7 @@ export function generateUniqueUserPassword(usedPasswords: Set<string>): string {
 export function generateMabaQrToken(nim?: string | null, username?: string): string {
   const identifier = (nim || username || "SILO").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   const randomSuffix = crypto.randomUUID().replace(/-/g, "").substring(0, 8).toUpperCase();
-  return `QR-${identifier}-${randomSuffix}`;
+  return `QR_${identifier}_${randomSuffix}`;
 }
 
 /**

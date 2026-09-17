@@ -1,14 +1,18 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styles from "./DokumentasiGallery.module.css";
 import { getCloudinaryUrl } from "@/utils/cloudinary";
 import { ImageWithLoading } from "@/components/ui/image-with-loading";
 
-interface DocItem {
+export interface DocItem {
   id: string;
   src: string;
   title: string;
   tag: string;
+}
+
+export interface DokumentasiGalleryProps {
+  items?: DocItem[];
 }
 
 const DOC_ITEMS: DocItem[] = [
@@ -58,13 +62,13 @@ const DOC_ITEMS: DocItem[] = [
     id: "doc-9",
     src: "/dokumentasi/doc_9.webp",
     title: "Fun Games & Lempar Bola Outbound SILO 2025",
-    tag: "Outbound Games",
+    tag: "Outbound Maba",
   },
   {
     id: "doc-10",
     src: "/dokumentasi/doc_10.webp",
-    title: "Sesi Kepemimpinan & Pengarahan Instruktur Outbound",
-    tag: "Team Building",
+    title: "Karnaval Kostum Daur Ulang & Kreativitas Mahasiswa",
+    tag: "Karnaval Daur Ulang",
   },
   {
     id: "doc-11",
@@ -86,15 +90,15 @@ const DOC_ITEMS: DocItem[] = [
   },
 ];
 
-// Duplikasi data agar slider menyambung tanpa henti (infinite seamless loop)
-const EXTENDED_ITEMS = [...DOC_ITEMS, ...DOC_ITEMS];
+export default function DokumentasiGallery({ items }: DokumentasiGalleryProps = {}) {
+  const activeItems = items && items.length > 0 ? items : DOC_ITEMS;
+  const extendedItems = [...activeItems, ...activeItems];
+  const totalOriginal = activeItems.length;
 
-export default function DokumentasiGallery() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<DocItem | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(true);
-  const totalOriginal = DOC_ITEMS.length;
 
   const handleNext = useCallback(() => {
     setIsTransitioning(true);
@@ -134,7 +138,7 @@ export default function DokumentasiGallery() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImage]);
+  }, [selectedImage, handleNext, handlePrev]);
 
   const cardStep = 400; // 380px card + 20px gap
 
@@ -157,7 +161,7 @@ export default function DokumentasiGallery() {
               : "none",
           }}
         >
-          {EXTENDED_ITEMS.map((item, index) => (
+          {extendedItems.map((item, index) => (
             <div
               key={`${item.id}-${index}`}
               className={styles.slideCard}
