@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { SessionModel } from "@/models";
-import { normalizeAttendanceType, getAttendanceTypeLabel } from "@/config/attendance";
+import { requireAdmin } from "@/utils/api-guard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -47,6 +47,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(req);
+    if (auth.response) return auth.response;
+
     const { id } = await params;
     const body = await req.json();
     const { name, toleransi } = body;
@@ -88,10 +91,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(req);
+    if (auth.response) return auth.response;
+
     const { id } = await params;
     const existing = await SessionModel.getById(Number(id));
     if (!existing) {

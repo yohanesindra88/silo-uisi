@@ -37,18 +37,28 @@ export async function DELETE(req: NextRequest) {
 
       // Eksekusi transaksi pelepasan relasi dan penghapusan kelompok
       await prisma.$transaction(async (tx) => {
-        // Lepas user dari kelompok ini
+        // 1. Lepas user (maba/anggota) dari kelompok ini agar akun maba TETAP DIPERTAHANKAN
         await tx.user.updateMany({
           where: { mGroupsId: existingGroup.id },
           data: { mGroupsId: null },
         });
 
-        // Hapus pivot mentor
+        // 2. Hapus pivot mentor kelompok
         await tx.groupMentor.deleteMany({
           where: { mGroupsId: existingGroup.id },
         });
 
-        // Hapus kelompok
+        // 3. Hapus data presensi kelompok
+        await tx.attendance.deleteMany({
+          where: { groupsId: existingGroup.id },
+        });
+
+        // 4. Hapus data cek atribut kelompok
+        await tx.attributeCheck.deleteMany({
+          where: { groupId: existingGroup.id },
+        });
+
+        // 5. Hapus kelompok
         await tx.group.delete({
           where: { id: existingGroup.id },
         });
@@ -56,7 +66,7 @@ export async function DELETE(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Kelompok "${existingGroup.name}" berhasil dihapus dari database.`,
+        message: `Kelompok "${existingGroup.name}" berhasil dihapus dari database. Data maba tetap dipertahankan.`,
       });
     } else if (type === "users") {
       const trimmedIdentifier = identifier.trim();
@@ -76,14 +86,57 @@ export async function DELETE(req: NextRequest) {
         );
       }
 
-      // Hapus pengguna secara atomic
+      // Hapus pengguna secara atomic dengan membersihkan seluruh relasi
       await prisma.$transaction(async (tx) => {
-        // Hapus relasi mentor kelompok jika ada
+        // 1. Hapus relasi mentor kelompok jika user adalah mentor
         await tx.groupMentor.deleteMany({
           where: { mUsersId: existingUser.id },
         });
 
-        // Hapus user
+        // 2. Hapus data presensi maba
+        await tx.attendance.deleteMany({
+          where: { mabaId: existingUser.id },
+        });
+
+        // 3. Jika user pernah scan presensi, set scannedBy ke null agar riwayat maba lain tetap terjaga
+        await tx.attendance.updateMany({
+          where: { scannedBy: existingUser.id },
+          data: { scannedBy: null },
+        });
+
+        // 4. Hapus data pengumpulan tugas maba (submissions)
+        await tx.submission.deleteMany({
+          where: { mabaId: existingUser.id },
+        });
+
+        // 5. Jika user pernah mereview tugas, set reviewedBy ke null
+        await tx.submission.updateMany({
+          where: { reviewedBy: existingUser.id },
+          data: { reviewedBy: null },
+        });
+
+        // 6. Hapus data pengecekan atribut (baik sebagai maba maupun checker)
+        await tx.attributeCheck.deleteMany({
+          where: {
+            OR: [
+              { mabaId: existingUser.id },
+              { checkedBy: existingUser.id },
+            ],
+          },
+        });
+
+        // 7. Jika user adalah pembuat tugas atau atribut, set createdBy ke null
+        await tx.assignment.updateMany({
+          where: { createdBy: existingUser.id },
+          data: { createdBy: null },
+        });
+
+        await tx.attribute.updateMany({
+          where: { createdBy: existingUser.id },
+          data: { createdBy: null },
+        });
+
+        // 8. Hapus user
         await tx.user.delete({
           where: { id: existingUser.id },
         });
@@ -91,7 +144,7 @@ export async function DELETE(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Pengguna "${existingUser.nama}" (${existingUser.username}) berhasil dihapus dari database.`,
+        message: `Pengguna "${existingUser.nama}" (${existingUser.username}) dan seluruh riwayat data terkait berhasil dihapus dari database.`,
       });
     } else {
       return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AssignmentModel } from "@/models";
+import { requireAdmin } from "@/utils/api-guard";
 
 export async function GET(
   _req: Request,
@@ -20,10 +21,11 @@ export async function GET(
       success: true,
       data: assignment,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada GET /api/assignments/[id]:", error);
     return NextResponse.json(
-      { success: false, message: "Gagal mengambil data penugasan.", error: error.message },
+      { success: false, message: "Gagal mengambil data penugasan.", error: errorMessage },
       { status: 500 }
     );
   }
@@ -34,6 +36,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(req);
+    if (auth.response) return auth.response;
+
     const { id } = await params;
     const body = await req.json();
     const { title, description, attachmentUrl, dueDate, attachment_url, due_date } = body;
@@ -60,20 +65,24 @@ export async function PUT(
       message: "Penugasan berhasil diperbarui.",
       data: updated,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada PUT /api/assignments/[id]:", error);
     return NextResponse.json(
-      { success: false, message: "Gagal memperbarui penugasan.", error: error.message },
+      { success: false, message: "Gagal memperbarui penugasan.", error: errorMessage },
       { status: 500 }
     );
   }
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(req);
+    if (auth.response) return auth.response;
+
     const { id } = await params;
     const existing = await AssignmentModel.getById(Number(id), false);
     if (!existing) {
@@ -89,10 +98,11 @@ export async function DELETE(
       success: true,
       message: "Penugasan berhasil dinonaktifkan (soft delete).",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
     console.error("Error pada DELETE /api/assignments/[id]:", error);
     return NextResponse.json(
-      { success: false, message: "Gagal menghapus penugasan.", error: error.message },
+      { success: false, message: "Gagal menghapus penugasan.", error: errorMessage },
       { status: 500 }
     );
   }

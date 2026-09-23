@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { GroupModel } from "@/models";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const groups = await GroupModel.getAll();
+    const { searchParams } = new URL(req.url);
+    const includeRelations = searchParams.get("includeRelations") === "true";
+    const groups = await GroupModel.getAll(includeRelations);
 
     return NextResponse.json({
       success: true,

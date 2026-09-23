@@ -142,6 +142,12 @@ export default function AdminMonitoringPage() {
   const [editFormError, setEditFormError] = useState("");
   const [editFormSuccess, setEditFormSuccess] = useState("");
 
+  // Modal Hapus Sesi Langsung States
+  const [sessionToDelete, setSessionToDelete] = useState<SessionItem | null>(null);
+  const [isDeleteSessionModalOpen, setIsDeleteSessionModalOpen] = useState(false);
+  const [isDeletingSessionDirect, setIsDeletingSessionDirect] = useState(false);
+  const [deleteSessionDirectError, setDeleteSessionDirectError] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
     try {
       // 1. Profil
@@ -501,6 +507,42 @@ export default function AdminMonitoringPage() {
     }
   };
 
+  // Handler Open Modal Hapus Sesi Langsung dari Kartu
+  const openDeleteSessionDirect = (sess: SessionItem) => {
+    setSessionToDelete(sess);
+    setDeleteSessionDirectError(null);
+    setIsDeleteSessionModalOpen(true);
+  };
+
+  // Controller Handler Eksekusi Hapus Sesi Langsung
+  const handleConfirmDeleteSessionDirect = async () => {
+    if (!sessionToDelete) return;
+    setIsDeletingSessionDirect(true);
+    setDeleteSessionDirectError(null);
+
+    try {
+      const res = await fetch(`/api/sessions/${sessionToDelete.id}`, {
+        method: "DELETE",
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        throw new Error(resData.message || "Gagal menghapus sesi kegiatan.");
+      }
+
+      if (selectedSession === String(sessionToDelete.id)) {
+        setSelectedSession("all");
+      }
+      await loadData();
+      setIsDeleteSessionModalOpen(false);
+      setSessionToDelete(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus sesi.";
+      setDeleteSessionDirectError(msg);
+    } finally {
+      setIsDeletingSessionDirect(false);
+    }
+  };
+
   // Filter Data
   const filteredRows = allRows.filter((r) => {
     if (selectedSession !== "all" && String(r.sessionId) !== selectedSession) return false;
@@ -740,22 +782,55 @@ export default function AdminMonitoringPage() {
                       {isP ? "🎓 Prodi" : "👥 Kelompok"}
                     </span>
                   </div>
-                  <span
-                    style={{
-                      fontSize: "0.68rem",
-                      fontWeight: 700,
-                      color: isSelected ? "#68CFEB" : "#1F4B5D",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "3px",
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      backgroundColor: isSelected ? "rgba(104, 207, 235, 0.15)" : "rgba(31, 75, 93, 0.06)",
-                    }}
-                  >
-                    <Edit3 size={11} />
-                    <span>Edit</span>
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditSessionModal(sess);
+                      }}
+                      title="Edit Sesi"
+                      style={{
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        color: isSelected ? "#68CFEB" : "#1F4B5D",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        backgroundColor: isSelected ? "rgba(104, 207, 235, 0.15)" : "rgba(31, 75, 93, 0.06)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Edit3 size={11} />
+                      <span>Edit</span>
+                    </span>
+
+                    {user?.role === "admin" && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteSessionDirect(sess);
+                        }}
+                        title="Hapus Sesi Kegiatan"
+                        style={{
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          color: "#DC2626",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "3px",
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          backgroundColor: isSelected ? "rgba(255, 255, 255, 0.9)" : "rgba(239, 68, 68, 0.1)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Trash2 size={11} />
+                        <span>Hapus</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px", lineHeight: "1.2" }}>
                   {sess.name}
@@ -1745,6 +1820,203 @@ export default function AdminMonitoringPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Sesi Langsung */}
+      {isDeleteSessionModalOpen && sessionToDelete && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+          onClick={() => {
+            if (!isDeletingSessionDirect) setIsDeleteSessionModalOpen(false);
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "20px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 20px 48px rgba(0, 0, 0, 0.25)",
+              overflow: "hidden",
+              animation: "fadeIn 0.2s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                backgroundColor: "#DC2626",
+                padding: "16px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                color: "#FFFFFF",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <AlertCircle size={20} color="#FFFFFF" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "1rem", fontWeight: 800, margin: 0, color: "#FFFFFF" }}>
+                    Hapus Sesi Kegiatan
+                  </h3>
+                  <p style={{ fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.85)", margin: 0 }}>
+                    Konfirmasi penonaktifan sesi kegiatan
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteSessionModalOpen(false)}
+                disabled={isDeletingSessionDirect}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                  padding: "4px",
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: "20px" }}>
+              {deleteSessionDirectError && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    color: "#DC2626",
+                    fontSize: "0.8rem",
+                    marginBottom: "14px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {deleteSessionDirectError}
+                </div>
+              )}
+
+              <p style={{ fontSize: "0.88rem", color: "#374151", margin: "0 0 12px 0", lineHeight: 1.5 }}>
+                Apakah Anda yakin ingin menghapus sesi kegiatan{" "}
+                <strong style={{ color: "#1F4B5D" }}>&quot;{sessionToDelete.name}&quot;</strong>?
+              </p>
+
+              <div
+                style={{
+                  backgroundColor: "#F9FAFB",
+                  borderRadius: "12px",
+                  padding: "12px 14px",
+                  border: "1px solid #E5E7EB",
+                  fontSize: "0.78rem",
+                  color: "#6B7280",
+                  lineHeight: 1.5,
+                }}
+              >
+                <div>• Sesi ID: #{sessionToDelete.id}</div>
+                <div>
+                  • Waktu:{" "}
+                  {formatTimeRange(
+                    sessionToDelete.startSessions || sessionToDelete.start_sessions,
+                    sessionToDelete.endSessions || sessionToDelete.end_sessions
+                  )}
+                </div>
+                <div>
+                  • Otorisasi:{" "}
+                  {(sessionToDelete.attendance_type || sessionToDelete.attendanceType) === "prodi"
+                    ? "🎓 Berdasarkan Prodi"
+                    : "👥 Berdasarkan Kelompok"}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "14px 20px",
+                backgroundColor: "#F9FAFB",
+                borderTop: "1px solid #E5E7EB",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setIsDeleteSessionModalOpen(false)}
+                disabled={isDeletingSessionDirect}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid #D1D5DB",
+                  backgroundColor: "#FFFFFF",
+                  color: "#374151",
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  cursor: isDeletingSessionDirect ? "not-allowed" : "pointer",
+                }}
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSessionDirect}
+                disabled={isDeletingSessionDirect}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "9px 18px",
+                  borderRadius: "10px",
+                  border: "none",
+                  backgroundColor: "#DC2626",
+                  color: "#FFFFFF",
+                  fontWeight: 800,
+                  fontSize: "0.82rem",
+                  cursor: isDeletingSessionDirect ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 12px rgba(220, 38, 38, 0.3)",
+                }}
+              >
+                {isDeletingSessionDirect ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    <span>Menghapus...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={15} />
+                    <span>Ya, Hapus Sesi</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

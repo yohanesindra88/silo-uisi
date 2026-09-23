@@ -813,49 +813,51 @@ export default function AdminTugasPage() {
                   {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
 
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(item)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(31, 75, 93, 0.2)",
-                      backgroundColor: "#FFFFFF",
-                      color: "#1F4B5D",
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <Edit3 size={13} />
-                    Edit
-                  </button>
+                {user?.role === "admin" && (
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(item)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(31, 75, 93, 0.2)",
+                        backgroundColor: "#FFFFFF",
+                        color: "#1F4B5D",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Edit3 size={13} />
+                      Edit
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDelete(item)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(239, 68, 68, 0.2)",
-                      backgroundColor: "rgba(239, 68, 68, 0.05)",
-                      color: "#DC2626",
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <Trash2 size={13} />
-                    Hapus
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDelete(item)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                        backgroundColor: "rgba(239, 68, 68, 0.05)",
+                        color: "#DC2626",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Trash2 size={13} />
+                      Hapus
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* ========================================================================= */}
