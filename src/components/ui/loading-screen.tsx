@@ -35,7 +35,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       <div className="silo-bounce-wrapper">
         <div className="silo-bounce-logo">
           <Image
-            src="/icon.png"
+            src="/apple-icon.png"
             alt="Logo AETHERA SILO UISI"
             width={76}
             height={76}
@@ -43,6 +43,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               width: "76px",
               height: "76px",
               objectFit: "contain",
+              borderRadius: "16px",
               filter: "drop-shadow(0 10px 18px rgba(104, 207, 235, 0.45))",
             }}
           />
