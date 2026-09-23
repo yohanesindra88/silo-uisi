@@ -350,8 +350,8 @@ export default function QrAttendanceScanner({
         const maba = result.data?.maba;
         triggerScanResult({
           type: "error",
-          title: "Di Luar Kelompok Binaan",
-          message: result.message || "Mahasiswa ini tidak terdaftar di dalam kelompok binaan Anda.",
+          title: "Di Luar Negara",
+          message: result.message || "Mahasiswa ini tidak terdaftar di dalam Negara Anda.",
           mabaNama: maba?.nama,
           nim: maba?.nim,
           prodi: maba?.prodi,
@@ -1064,7 +1064,7 @@ export default function QrAttendanceScanner({
           </div>
         )}
 
-        {/* Info Kelompok Binaan untuk Sesi GROUP (Mentor) */}
+        {/* Info Negara untuk Sesi GROUP (Mentor) */}
         {isMentor && !isProdiSession && (
           <div
             style={{
@@ -1084,7 +1084,7 @@ export default function QrAttendanceScanner({
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginBottom: "6px" }}>
               <span style={{ fontSize: "0.72rem", color: "rgba(31, 75, 93, 0.8)", fontWeight: 600 }}>
-                Kelompok Binaan yang Berhak Anda Pindai:
+                Negara yang Berhak Anda Pindai:
               </span>
               {currentUser?.mentored_groups && currentUser.mentored_groups.length > 0 ? (
                 currentUser.mentored_groups.map((g) => (
@@ -1104,12 +1104,12 @@ export default function QrAttendanceScanner({
                   </span>
                 ))
               ) : (
-                <em style={{ fontSize: "0.72rem", color: "#DC2626" }}>Belum ada kelompok binaan</em>
+                <em style={{ fontSize: "0.72rem", color: "#DC2626" }}>Belum ada Negara</em>
               )}
             </div>
 
             <div style={{ fontSize: "0.7rem", color: "rgba(3, 105, 161, 0.85)" }}>
-              💡 Sesi ini berbasis Kelompok. Mahasiswa di luar kelompok binaan Anda tidak dapat dipindai oleh akun Anda.
+              💡 Sesi ini berbasis Kelompok. Mahasiswa di luar Negara Anda tidak dapat dipindai oleh akun Anda.
             </div>
           </div>
         )}

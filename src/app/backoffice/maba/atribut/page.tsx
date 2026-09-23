@@ -300,7 +300,7 @@ export default function MabaAtributPage() {
             </span>
           ) : (
             <span>
-              <strong>Cukup 1 Item Per Kelompok:</strong> Diskusikan dan bagi tugas antar sesama anggota kelompok binaan Anda.
+              <strong>Cukup 1 Item Per Kelompok:</strong> Diskusikan dan bagi tugas antar sesama anggota Negara Anda.
             </span>
           )}
         </div>

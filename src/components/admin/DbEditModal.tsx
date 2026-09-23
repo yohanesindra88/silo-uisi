@@ -311,7 +311,7 @@ const DbEditModalForm: React.FC<DbEditModalFormProps> = ({
                 {/* Field Kelompok */}
                 <div>
                   <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
-                    Kelompok Binaan
+                    Negara
                   </label>
                   <select
                     value={selectedGroupId}

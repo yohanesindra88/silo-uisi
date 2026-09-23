@@ -60,7 +60,7 @@ export class AttendanceModel {
    * - Memvalidasi sesi aktif (mendukung sesi uji coba & bypass jadwal untuk pengujian)
    * - Validasi Otorisasi Scanner:
    *   * Panitia & Admin: Bypass penuh (universal scanner)
-   *   * Mentor + Sesi GROUP: Validasi kelompok binaan via groups_mentors
+   *   * Mentor + Sesi GROUP: Validasi Negara via groups_mentors
    *   * Mentor + Sesi PRODI: Validasi prodi mentor vs maba via PRODI_SCAN_PERMISSIONS
    * - Menghitung keterlambatan berdasarkan endSessions + toleransi (menit)
    * - Mencegah duplikasi dengan unique constraint (maba_id, sessions_id)
@@ -226,7 +226,7 @@ export class AttendanceModel {
             return {
               success: false,
               code: "UNAUTHORIZED_GROUP",
-              message: `Akses ditolak: Mahasiswa ${maba.nama} (${maba.nim || maba.username}) terdaftar di kelompok "${maba.group?.name || "Tanpa Kelompok"}". Anda hanya berhak memindai mahasiswa binaan Anda (${mentoredNames.length > 0 ? mentoredNames.join(", ") : "Tidak ada kelompok binaan aktif"}).`,
+              message: `Akses ditolak: Mahasiswa ${maba.nama} (${maba.nim || maba.username}) terdaftar di kelompok "${maba.group?.name || "Tanpa Kelompok"}". Anda hanya berhak memindai mahasiswa Negara Anda (${mentoredNames.length > 0 ? mentoredNames.join(", ") : "Tidak ada Negara aktif"}).`,
               data: {
                 maba: {
                   id: maba.id,

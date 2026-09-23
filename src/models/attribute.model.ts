@@ -197,7 +197,7 @@ export class AttributeModel {
       });
       groupIds = allGroups.map((g) => g.id);
     } else {
-      // Jika Mentor tetapi belum memiliki kelompok binaan yang ditugaskan
+      // Jika Mentor tetapi belum memiliki Negara yang ditugaskan
       if (groupIds.length === 0) {
         return {
           targetDate: targetDateStr,

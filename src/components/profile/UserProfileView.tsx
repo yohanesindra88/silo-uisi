@@ -485,7 +485,7 @@ export function UserProfileView({ expectedRole }: UserProfileViewProps) {
               <Users size={18} color="#1F4B5D" style={{ marginTop: "2px", flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: "0.72rem", color: "rgba(31, 75, 93, 0.65)", fontWeight: 700, textTransform: "uppercase" }}>
-                  Kelompok Binaan
+                  Negara
                 </div>
                 <div style={{ fontSize: "0.92rem", fontWeight: 800, color: "#1F1E19" }}>
                   {kelompokDisplay}

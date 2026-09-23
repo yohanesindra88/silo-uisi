@@ -471,7 +471,7 @@ export default function MentorAtributPage() {
         </div>
       )}
 
-      {/* 3. Bar Kontrol: Pemilih Tanggal & Dropdown Kelompok Binaan */}
+      {/* 3. Bar Kontrol: Pemilih Tanggal & Dropdown Negara */}
       <div
         style={{
           backgroundColor: "#FFFFFF",
@@ -516,7 +516,7 @@ export default function MentorAtributPage() {
           {/* Kelompok */}
           <div>
             <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
-              Kelompok Binaan:
+              Negara:
             </label>
             <select
               value={selectedGroupId}
@@ -537,7 +537,7 @@ export default function MentorAtributPage() {
                 boxSizing: "border-box",
               }}
             >
-              <option value="all">Semua Kelompok Binaan</option>
+              <option value="all">Semua Negara</option>
               {mentorData?.groups.map((grp) => (
                 <option key={grp.id} value={grp.id}>
                   {grp.name}

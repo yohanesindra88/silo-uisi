@@ -265,7 +265,7 @@ export default function MabaCardPage() {
     ctx.textAlign = "left";
     ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
     ctx.font = "14px sans-serif";
-    ctx.fillText("Kelompok Binaan", 80, 605);
+    ctx.fillText("Negara", 80, 605);
     ctx.fillText("Fakultas", 80, 665);
     ctx.fillText("Program Studi", 80, 725);
     ctx.fillText("Status", 80, 785);
@@ -566,7 +566,7 @@ export default function MabaCardPage() {
 
                 <div>
                   <div style={{ fontSize: "0.62rem", color: brightnessBoost ? "#64748B" : "rgba(255, 255, 255, 0.65)", fontWeight: 700 }}>
-                    Kelompok Binaan
+                    Negara
                   </div>
                   <div style={{ fontSize: "0.8rem", fontWeight: 700, color: brightnessBoost ? "#0F172A" : "#FFFFFF" }}>
                     {user?.group?.name || "Belum Ada Kelompok"}

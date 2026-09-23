@@ -349,7 +349,7 @@ export class AttributeController {
       });
 
       // VALIDASI OTORISASI KELOMPOK MENTOR:
-      // Hanya mentor yang ditugaskan di kelompok tersebut yang dapat memeriksa maba atau kelompok binaannya.
+      // Hanya mentor yang ditugaskan di kelompok tersebut yang dapat memeriksa maba atau Negaranya.
       if (dbUser.role === "mentor") {
         const mentorGroups = await prisma.groupMentor.findMany({
           where: {
@@ -377,7 +377,7 @@ export class AttributeController {
             return NextResponse.json(
               {
                 success: false,
-                message: `Akses ditolak: Anda tidak berhak memeriksa kelompok ID ${item.groupId} karena bukan merupakan kelompok binaan Anda.`,
+                message: `Akses ditolak: Anda tidak berhak memeriksa kelompok ID ${item.groupId} karena bukan merupakan Negara Anda.`,
               },
               { status: 403 }
             );
@@ -417,7 +417,7 @@ export class AttributeController {
               return NextResponse.json(
                 {
                   success: false,
-                  message: `Akses ditolak: Mahasiswa "${maba.nama}" bukan merupakan anggota kelompok binaan Anda. Atribut maba hanya dapat dicek oleh mentor kelompoknya.`,
+                  message: `Akses ditolak: Mahasiswa "${maba.nama}" bukan merupakan anggota Negara Anda. Atribut maba hanya dapat dicek oleh mentor kelompoknya.`,
                 },
                 { status: 403 }
               );

@@ -103,7 +103,7 @@ export default function MentorMonitoringPage() {
         mentorGroupIds.push(meData.user.m_groups_id);
       }
 
-      // Ambil data maba resmi dari database sesuai kelompok binaan
+      // Ambil data maba resmi dari database sesuai Negara
       const usersRes = await fetch("/api/users?role=maba").catch(() => null);
       let mabaList: any[] = [];
       if (usersRes && usersRes.ok) {
@@ -146,7 +146,7 @@ export default function MentorMonitoringPage() {
           nim: mabaUser?.nim || mabaUser?.username || "-",
           nama: mabaUser?.nama || "Mahasiswa",
           prodi: mabaUser?.prodi || "-",
-          groupName: mabaUser?.group?.name || "Kelompok Binaan",
+          groupName: mabaUser?.group?.name || "Negara",
           groupId: gId,
           sessionName: att.session?.name || sessObj?.name || "Sesi",
           sessionId: sId,
@@ -173,7 +173,7 @@ export default function MentorMonitoringPage() {
               nim: m.nim || m.username || "-",
               nama: m.nama,
               prodi: m.prodi || "-",
-              groupName: m.group?.name || "Kelompok Binaan",
+              groupName: m.group?.name || "Negara",
               groupId: m.mGroupsId || m.group?.id,
               sessionName: sess.name,
               sessionId: sess.id,

@@ -733,7 +733,7 @@ export default function AdminDashboardPage() {
               <Layers size={18} />
             </div>
             <span style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.7)", fontWeight: 600 }}>
-              Kelompok Binaan
+              Negara
             </span>
           </div>
           <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#0F766E" }}>

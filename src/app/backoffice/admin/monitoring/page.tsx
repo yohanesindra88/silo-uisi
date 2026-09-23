@@ -1375,7 +1375,7 @@ export default function AdminMonitoringPage() {
                   <option value="prodi">🎓 Prodi</option>
                 </select>
                 <span style={{ fontSize: "0.7rem", color: "rgba(31, 75, 93, 0.6)" }}>
-                  Pilih apakah presensi maba divalidasi berdasarkan Kelompok binaan atau Program Studi.
+                  Pilih apakah presensi maba divalidasi berdasarkan Negara atau Program Studi.
                 </span>
               </div>
 

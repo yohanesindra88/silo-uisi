@@ -148,7 +148,7 @@ export default function MentorDashboardPage() {
   const lastScanTimestampRef = useRef<number>(0);
   const lastScannedCodeRef = useRef<string>("");
 
-  // Helper untuk memuat data kehadiran maba kelompok binaan dari DB
+  // Helper untuk memuat data kehadiran maba Negara dari DB
   const refreshAttendanceCounts = useCallback(
     async (sessionId: number, mabaList: MabaItem[], gIds: number[]) => {
       if (!sessionId) return;
@@ -495,8 +495,8 @@ export default function MentorDashboardPage() {
         const maba = result.data?.maba;
         triggerScanResult({
           type: "error",
-          title: "Bukan Mahasiswa Kelompok Binaan",
-          message: result.message || "Mahasiswa tidak terdaftar di kelompok binaan Anda.",
+          title: "Bukan Mahasiswa Negara",
+          message: result.message || "Mahasiswa tidak terdaftar di Negara Anda.",
           mabaNama: maba?.nama,
           nim: maba?.nim || maba?.username,
           prodi: maba?.prodi,
@@ -739,7 +739,7 @@ export default function MentorDashboardPage() {
           {user?.nama}
         </h2>
         <p style={{ fontSize: "0.85rem", opacity: 0.9, margin: "0 0 14px 0" }}>
-          Kelompok Binaan: <strong>{mentoredGroupNames}</strong>
+          Negara: <strong>{mentoredGroupNames}</strong>
         </p>
 
         <div
@@ -766,7 +766,7 @@ export default function MentorDashboardPage() {
         </div>
       </div>
 
-      {/* 2. Kartu Progres Presensi Kelompok Binaan */}
+      {/* 2. Kartu Progres Presensi Negara */}
       <div
         style={{
           backgroundColor: "#FFFFFF",
@@ -785,7 +785,7 @@ export default function MentorDashboardPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Users size={18} color="#0F766E" />
                 <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0, color: "#1F4B5D" }}>
-                  {isP ? "Kehadiran Mahasiswa Prodi" : "Kehadiran Kelompok Binaan"}
+                  {isP ? "Kehadiran Mahasiswa Prodi" : "Kehadiran Negara"}
                 </h3>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1344,7 +1344,7 @@ export default function MentorDashboardPage() {
                 </span>
               ) : (
                 <span>
-                  Sesi ini adalah presensi kelompok. Anda hanya berhak memindai mahasiswa kelompok binaan:{" "}
+                  Sesi ini adalah presensi kelompok. Anda hanya berhak memindai mahasiswa Negara:{" "}
                   <strong>{mentoredGroupNames}</strong>.
                 </span>
               )}
