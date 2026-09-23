@@ -31,7 +31,7 @@
 }
 
 .navbar::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 50%;
@@ -48,7 +48,11 @@
 .logo {
   font-size: 1.3rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--lp-sunset-from), var(--lp-ocean-from));
+  background: linear-gradient(
+    135deg,
+    var(--lp-sunset-from),
+    var(--lp-ocean-from)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -197,7 +201,8 @@
 
 /* ===== HERO ===== */
 .hero {
-  padding: calc(clamp(2rem, 4vw, 4rem) - 20px) clamp(1.5rem, 5vw, 3rem) clamp(3rem, 5vw, 5rem);
+  padding: calc(clamp(2rem, 4vw, 4rem) - 20px) clamp(1.5rem, 5vw, 3rem)
+    clamp(3rem, 5vw, 5rem);
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: 2rem;
@@ -224,8 +229,6 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  width: 1280px;
-  margin: 0 auto;
   font-weight: 600;
   color: var(--lp-ocean-blue);
   background: rgba(31, 75, 93, 0.1);
@@ -244,7 +247,11 @@
 }
 
 .heroTitleAccent {
-  background: linear-gradient(135deg, var(--lp-sunset-from), var(--lp-ocean-from));
+  background: linear-gradient(
+    135deg,
+    var(--lp-sunset-from),
+    var(--lp-ocean-from)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -294,7 +301,11 @@
   width: 380px;
   height: 380px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.15) 0%, rgba(255, 107, 107, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(79, 172, 254, 0.15) 0%,
+    rgba(255, 107, 107, 0.1) 100%
+  );
   filter: blur(2px);
   top: -20px;
   right: -20px;
@@ -464,6 +475,18 @@
   gap: 1.5rem;
 }
 
+.servicesGridCentered {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.cardCentered {
+  width: calc(33.333% - 1rem);
+  box-sizing: border-box;
+}
+
 .card {
   background: var(--lp-glass);
   backdrop-filter: blur(12px);
@@ -480,13 +503,17 @@
 }
 
 .card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--lp-sunset-from), var(--lp-ocean-from));
+  background: linear-gradient(
+    90deg,
+    var(--lp-sunset-from),
+    var(--lp-ocean-from)
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -541,7 +568,7 @@
 }
 
 .logoCard::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -561,7 +588,11 @@
 .logoCardNumber {
   font-size: 0.7rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--lp-sunset-from), var(--lp-ocean-from));
+  background: linear-gradient(
+    135deg,
+    var(--lp-sunset-from),
+    var(--lp-ocean-from)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -605,17 +636,18 @@
 }
 
 .merchCard::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='30,0 60,52 0,52' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='0.5'/%3E%3C/svg%3E") repeat;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='30,0 60,52 0,52' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='0.5'/%3E%3C/svg%3E")
+    repeat;
   z-index: 0;
 }
 
-.merchCard>* {
+.merchCard > * {
   position: relative;
   z-index: 1;
 }
@@ -685,7 +717,7 @@
 }
 
 .footer::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -745,7 +777,7 @@
   color: #fff;
   font-size: 0.8rem;
   outline: none;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   transition: border-color 0.3s;
 }
 
@@ -767,7 +799,7 @@
   border: none;
   cursor: pointer;
   transition: all 0.3s;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 .footerButton:hover {
@@ -875,6 +907,14 @@
     gap: 1.5rem;
   }
 
+  .servicesGridCentered {
+    gap: 1.5rem;
+  }
+
+  .cardCentered {
+    width: calc(50% - 0.75rem);
+  }
+
   .merchCarousel {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
@@ -978,6 +1018,14 @@
   .servicesGrid {
     grid-template-columns: 1fr;
     gap: 1.25rem;
+  }
+
+  .servicesGridCentered {
+    gap: 1.25rem;
+  }
+
+  .cardCentered {
+    width: 100%;
   }
 
   .merchCarousel {

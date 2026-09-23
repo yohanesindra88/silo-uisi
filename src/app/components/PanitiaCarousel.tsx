@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect } from "react";
 import styles from "./PanitiaCarousel.module.css";
@@ -50,16 +50,16 @@ const PANITIA_PERSONS: PanitiaPerson[] = [
     image: "/putri_fara.webp",
   },
   {
-    id: "ko-acara",
+    id: "ko-Sc",
     name: "Jefranda Dinata",
-    role: "Koordinator SC & Acara",
+    role: "Koordinator SC",
     badge: "Acara",
     image: "/jefranda_dinata.webp",
   },
   {
-    id: "wko-acara",
+    id: "ko-acara",
     name: "Khairun Niza",
-    role: "Wakil Koordinator SC & Acara",
+    role: "Koordinator Acara",
     badge: "Acara",
     image: "/khairun_niza.webp",
   },

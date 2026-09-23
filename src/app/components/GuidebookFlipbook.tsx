@@ -390,10 +390,11 @@ export default function GuidebookFlipbook({ pdfUrl = "/guidebook.pdf" }: Guidebo
                 {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
               <a
-                href={pdfUrl}
-                download="GUIDEBOOK_BRANARA_SILO_UISI_2025.pdf"
+                href="https://drive.google.com/drive/folders/1btpo7hne9yhTdnpBKHs5KNvLcUui-ju_?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
                 className={styles.downloadBtn}
-                title="Unduh PDF Asli"
+                title="Unduh PDF Asli dari Google Drive"
               >
                 <Download size={15} />
                 <span>Unduh PDF</span>

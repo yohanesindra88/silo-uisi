@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 
-// Target event date: 6 Oktober 2026
-const TARGET_DATE = new Date("2026-10-06T23:59:59+07:00").getTime();
+// Target event date: 7 Oktober 2026
+const TARGET_DATE = new Date("2026-10-07T23:59:59+07:00").getTime();
 
 interface TimeLeft {
   months: number;
@@ -279,7 +279,7 @@ export default function CountdownSection() {
             lineHeight: 1.6,
           }}
         >
-          6 Oktober 2026 — Bersiaplah untuk perjalanan menuju cahaya paling murni.
+          7 Oktober 2026 — Bersiaplah untuk perjalanan menuju cahaya paling murni.
         </p>
 
         {isFinished ? (

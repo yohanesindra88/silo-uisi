@@ -94,7 +94,7 @@
 
 /* ===== Card ===== */
 .card {
-  width: 220px;
+  width: 260px;
   background: white;
   border-radius: 20px;
   overflow: hidden;
@@ -111,7 +111,7 @@
 }
 
 .cardCenter {
-  width: 260px;
+  width: 300px;
   box-shadow: 0 16px 48px rgba(31, 75, 93, 0.15), 0 0 0 1px rgba(104, 207, 235, 0.2);
 }
 
@@ -262,24 +262,46 @@
 /* ===== Price Row ===== */
 .priceRow {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
   margin-top: auto;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.price {
-  font-size: 1.05rem;
+.priceCol {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.25rem;
+  line-height: 1;
+}
+
+.priceCurrency {
+  font-size: 1rem;
   font-weight: 800;
+  color: var(--lp-ocean-blue);
+  margin-bottom: 0;
+}
+
+.priceValue {
+  font-size: 1.4rem;
+  font-weight: 900;
   color: var(--lp-ocean-blue);
 }
 
-.cardCenter .price {
-  font-size: 1.2rem;
+.cardCenter .priceCurrency {
+  font-size: 1.15rem;
+}
+
+.cardCenter .priceValue {
+  font-size: 1.65rem;
 }
 
 /* ===== Add to Cart Button ===== */
 .addToCartBtn {
+  align-self: flex-end;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -336,40 +358,29 @@
 @media (max-width: 1024px) {
   .track {
     padding: 2rem 2.5rem;
-    gap: 1rem;
   }
 
   .card {
-    flex: 0 0 190px;
+    width: 220px;
   }
 
   .cardCenter {
-    flex: 0 0 230px;
+    width: 260px;
   }
 }
 
 @media (max-width: 768px) {
   .track {
-    padding: 1rem 3rem;
-    gap: 0.75rem;
-    overflow-x: auto;
-    justify-content: flex-start;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    scroll-snap-type: x mandatory;
-  }
-
-  .track::-webkit-scrollbar {
-    display: none;
+    padding: 1rem;
+    height: 400px;
   }
 
   .card {
-    flex: 0 0 70%;
-    scroll-snap-align: center;
+    width: 190px;
   }
 
   .cardCenter {
-    flex: 0 0 75%;
+    width: 240px;
   }
 
   .arrowBtn {
@@ -378,11 +389,11 @@
   }
 
   .arrowLeft {
-    left: 2px;
+    left: 10px;
   }
 
   .arrowRight {
-    right: 2px;
+    right: 10px;
   }
 
   .sectionTitle {
@@ -399,15 +410,87 @@
 }
 
 @media (max-width: 480px) {
+  .track {
+    height: 400px;
+  }
+
   .card {
-    flex: 0 0 85%;
+    width: 200px;
   }
 
   .cardCenter {
-    flex: 0 0 88%;
+    width: 250px;
   }
 
   .arrowBtn {
-    display: none;
+    width: 32px;
+    height: 32px;
+  }
+
+  .arrowLeft {
+    left: 5px;
+  }
+
+  .arrowRight {
+    right: 5px;
+  }
+
+  /* Content adjustment for smaller cards */
+  .cardBody {
+    padding: 0.75rem 0.85rem 0.9rem;
+  }
+
+  .cardCenter .cardBody {
+    padding: 0.9rem 1rem 1.1rem;
+  }
+
+  .cardTitle {
+    font-size: 0.82rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .cardCenter .cardTitle {
+    font-size: 0.95rem;
+  }
+
+  .cardDesc {
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .priceCurrency {
+    font-size: 0.8rem;
+  }
+
+  .priceValue {
+    font-size: 1.1rem;
+  }
+
+  .cardCenter .priceCurrency {
+    font-size: 0.9rem;
+  }
+
+  .cardCenter .priceValue {
+    font-size: 1.25rem;
+  }
+
+  .addToCartBtn {
+    padding: 5px 8px;
+    font-size: 0.65rem;
+    gap: 4px;
+  }
+  
+  .badge {
+    font-size: 0.55rem;
+    padding: 3px 6px;
+    top: 8px;
+    left: 8px;
+  }
+  
+  .heartBtn {
+    width: 26px;
+    height: 26px;
+    top: 8px;
+    right: 8px;
   }
 }

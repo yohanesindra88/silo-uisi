@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Html, Center } from "@react-three/drei";
@@ -25,186 +25,186 @@ export const CLUSTERS: ClusterData[] = [
   {
     id: "01",
     no: 1,
-    name: "Kelompok 1 - Jepang",
+    name: "Cluster 1 - Jepang",
     country: "Jepang",
     continent: "Asia",
     flag: "🇯🇵",
     flagUrl: "https://flagcdn.com/jp.svg",
     desc: "Negara Sakura dengan filosofi Kaizen dan teknologi canggih. Melambangkan disiplin, inovasi, dan dedikasi tinggi.",
-    location: [49.9400, 148.6400],
+    location: [49.94, 148.64],
   },
   {
     id: "02",
     no: 2,
-    name: "Kelompok 2 - Korea Selatan",
+    name: "Cluster 2 - Korea Selatan",
     country: "Korea Selatan",
     continent: "Asia",
     flag: "🇰🇷",
     flagUrl: "https://flagcdn.com/kr.svg",
     desc: "Pusat gelombang budaya global dan inovasi teknologi digital. Mewakili kreativitas, kerja keras, dan jaringan global.",
-    location: [42.0000, 115.0000],
+    location: [42.0, 115.0],
   },
   {
     id: "03",
     no: 3,
-    name: "Kelompok 3 - Tiongkok",
+    name: "Cluster 3 - Tiongkok",
     country: "Tiongkok",
     continent: "Asia",
     flag: "🇨🇳",
     flagUrl: "https://flagcdn.com/cn.svg",
     desc: "Negara dengan peradaban tertua dan pertumbuhan ekonomi cepat. Simbol ketahanan, strategi, dan visi masa depan.",
-    location: [38.0000, 100.0000],
+    location: [38.0, 100.0],
   },
   {
     id: "04",
     no: 4,
-    name: "Kelompok 4 - India",
+    name: "Cluster 4 - India",
     country: "India",
     continent: "Asia",
     flag: "🇮🇳",
     flagUrl: "https://flagcdn.com/in.svg",
     desc: "Pusat keberagaman budaya dan talenta teknologi dunia. Melambangkan adaptabilitas, kecerdasan, dan kebersamaan.",
-    location: [20.0000, 75.0000],
+    location: [20.0, 75.0],
   },
 
   // --- AFRIKA ---
   {
     id: "05",
     no: 5,
-    name: "Kelompok 5 - Mesir",
+    name: "Cluster 5 - Mesir",
     country: "Mesir",
     continent: "Afrika",
     flag: "🇪🇬",
     flagUrl: "https://flagcdn.com/eg.svg",
     desc: "Negara warisan Piramida dan Sungai Nil. Melambangkan fondasi pengetahuan sejarah, pondasi kuat, dan kejayaan.",
-    location: [25.0000, 28.0000],
+    location: [25.0, 28.0],
   },
   {
     id: "06",
     no: 6,
-    name: "Kelompok 6 - Afrika Selatan",
+    name: "Cluster 6 - Afrika Selatan",
     country: "Afrika Selatan",
     continent: "Afrika",
     flag: "🇿🇦",
     flagUrl: "https://flagcdn.com/za.svg",
     desc: "Negara pelangi dengan semangat Ubuntu. Mewakili toleransi, persatuan dalam perbedaan, dan keberanian.",
-    location: [-25.7100, 11.7600],
+    location: [-25.71, 11.76],
   },
   {
     id: "07",
     no: 7,
-    name: "Kelompok 7 - Kenya",
+    name: "Cluster 7 - Kenya",
     country: "Kenya",
     continent: "Afrika",
     flag: "🇰🇪",
     flagUrl: "https://flagcdn.com/ke.svg",
     desc: "Pusat keanekaragaman hayati dan inovasi fintech Afrika. Melambangkan kebebasan, daya tahan, dan ketangguhan.",
-    location: [4.2200, 29.4900],
+    location: [4.22, 29.49],
   },
 
   // --- EROPA ---
   {
     id: "08",
     no: 8,
-    name: "Kelompok 8 - Prancis",
+    name: "Cluster 8 - Prancis",
     country: "Prancis",
     continent: "Eropa",
     flag: "🇫🇷",
     flagUrl: "https://flagcdn.com/fr.svg",
     desc: "Pusat seni, filsafat, dan diplomasi dunia. Melambangkan kebebasan berpikir, kesetaraan, dan estetika karya tinggi.",
-    location: [51.3200, 16.1900],
+    location: [51.32, 16.19],
   },
   {
     id: "09",
     no: 9,
-    name: "Kelompok 9 - Belanda",
+    name: "Cluster 9 - Belanda",
     country: "Belanda",
     continent: "Eropa",
     flag: "🇳🇱",
     flagUrl: "https://flagcdn.com/nl.svg",
     desc: "Pelopor sistem manajemen air dan pemikiran terbuka. Melambangkan solusi kreatif dan inovasi ramah lingkungan.",
-    location: [57.9700, 33.9300],
+    location: [57.97, 33.93],
   },
   {
     id: "10",
     no: 10,
-    name: "Kelompok 10 - Jerman",
+    name: "Cluster 10 - Jerman",
     country: "Jerman",
     continent: "Eropa",
     flag: "🇩🇪",
     flagUrl: "https://flagcdn.com/de.svg",
     desc: "Pusat rekayasa presisi dan riset keilmuan tinggi. Melambangkan ketelitian, logika terstruktur, dan kualitas tinggi.",
-    location: [59.6300, 52.7700],
+    location: [59.63, 52.77],
   },
 
   // --- AMERIKA ---
   {
     id: "11",
     no: 11,
-    name: "Kelompok 11 - Amerika Serikat",
+    name: "Cluster 11 - Amerika Serikat",
     country: "Amerika Serikat",
     continent: "Amerika",
     flag: "🇺🇸",
     flagUrl: "https://flagcdn.com/us.svg",
     desc: "Pusat kewirausahaan global dan ekosistem startup. Mewakili keberanian mengambil risiko, eksplorasi, dan kepemimpinan.",
-    location: [43.0100, -111.2700],
+    location: [43.01, -111.27],
   },
   {
     id: "12",
     no: 12,
-    name: "Kelompok 12 - Meksiko",
+    name: "Cluster 12 - Meksiko",
     country: "Meksiko",
     continent: "Amerika",
     flag: "🇲🇽",
     flagUrl: "https://flagcdn.com/mx.svg",
     desc: "Warisan budaya Maya & Aztek dengan kehangatan solidaritas. Melambangkan semangat pantang menyerah dan kekayaan tradisi.",
-    location: [27.4900, -120.1300],
+    location: [27.49, -120.13],
   },
   {
     id: "13",
     no: 13,
-    name: "Kelompok 13 - Kanada",
+    name: "Cluster 13 - Kanada",
     country: "Kanada",
     continent: "Amerika",
     flag: "🇨🇦",
     flagUrl: "https://flagcdn.com/ca.svg",
     desc: "Negara dengan bentang alam megah dan keberagaman harmonis. Melambangkan keramahan, kedamaian, dan keberlanjutan.",
-    location: [46.8900, -121.2400],
+    location: [46.89, -121.24],
   },
   {
     id: "14",
     no: 14,
-    name: "Kelompok 14 - Brasil",
+    name: "Cluster 14 - Brasil",
     country: "Brasil",
     continent: "Amerika",
     flag: "🇧🇷",
     flagUrl: "https://flagcdn.com/br.svg",
     desc: "Rumah bagi Amazon dan semangat kebersamaan meriah. Melambangkan energi positif, vitalitas, dan daya juang tinggi.",
-    location: [-14.0700, -71.3700],
+    location: [-14.07, -71.37],
   },
 
   // --- OCEANIA ---
   {
     id: "15",
     no: 15,
-    name: "Kelompok 15 - Australia",
+    name: "Cluster 15 - Australia",
     country: "Australia",
     continent: "Oceania",
     flag: "🇦🇺",
     flagUrl: "https://flagcdn.com/au.svg",
     desc: "Benua unik dengan ekosistem khas dan gaya hidup progresif. Mewakili ketahanan alami, eksplorasi bahari, dan kemandirian.",
-    location: [-25.2744, 124.8100],
+    location: [-25.2744, 124.81],
   },
   {
     id: "16",
     no: 16,
-    name: "Kelompok 16 - Papua Nugini",
+    name: "Cluster 16 - Papua Nugini",
     country: "Papua Nugini",
     continent: "Oceania",
     flag: "🇵🇬",
     flagUrl: "https://flagcdn.com/pg.svg",
     desc: "Negara tetangga dengan kekayaan ratusan tradisi adat luhur. Melambangkan kearifan lokal dan persaudaraan Pasifik.",
-    location: [-8.5300, 133.6800],
+    location: [-8.53, 133.68],
   },
 ];
 
@@ -237,7 +237,7 @@ function Marker({
   const { x, y, z } = getCoordinatesFromLatLng(
     location[0],
     location[1],
-    EARTH_RADIUS
+    EARTH_RADIUS,
   );
   const markerPos = new THREE.Vector3(x, y, z).multiplyScalar(1.05);
 
@@ -290,7 +290,11 @@ function Marker({
             overflow: "hidden",
           }}
         >
-          <img src={flagUrl} alt={`${label} flag`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={flagUrl}
+            alt={`${label} flag`}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         </div>
         {isActive && (
           <div
@@ -323,7 +327,7 @@ function CameraController({ activeIdx }: { activeIdx: number }) {
     const { x, y, z } = getCoordinatesFromLatLng(
       activeCluster.location[0],
       activeCluster.location[1],
-      EARTH_RADIUS
+      EARTH_RADIUS,
     );
 
     const targetPos = new THREE.Vector3(x, y, z)
@@ -347,12 +351,7 @@ export default function GlobeSection() {
     setActiveIdx((i) => (i - 1 + CLUSTERS.length) % CLUSTERS.length);
 
   return (
-    <section
-      id="kelompok"
-      className={styles.section}
-      data-aos="fade-up"
-      suppressHydrationWarning
-    >
+    <section id="kelompok" className={styles.section} data-aos="fade-up">
       <h2
         style={{
           fontSize: "2.25rem",
@@ -363,7 +362,18 @@ export default function GlobeSection() {
           letterSpacing: "-0.03em",
         }}
       >
-        Cluster Negara <span style={{ background: "linear-gradient(135deg, var(--lp-ocean-blue), var(--lp-aqua))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>AETHERA SILO UISI 2026</span>
+        Cluster Negara{" "}
+        <span
+          style={{
+            background:
+              "linear-gradient(135deg, var(--lp-ocean-blue), var(--lp-aqua))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          AETHERA SILO UISI 2026
+        </span>
       </h2>
       <p
         style={{
@@ -405,37 +415,46 @@ export default function GlobeSection() {
               style={{ background: "transparent" }}
               gl={{ alpha: true }}
             >
-              <ambientLight intensity={1.6} />
-              <pointLight position={[10, 10, 10]} intensity={2} />
-              <directionalLight position={[-5, 5, 5]} intensity={1} />
+              <Suspense fallback={null}>
+                <ambientLight intensity={1.6} />
+                <pointLight position={[10, 10, 10]} intensity={2} />
+                <directionalLight position={[-5, 5, 5]} intensity={1} />
 
-              <EarthModel />
+                <EarthModel />
 
-              {CLUSTERS.map((cluster, index) => (
-                <Marker
-                  key={cluster.id}
-                  location={cluster.location}
-                  isActive={index === activeIdx}
-                  label={cluster.country}
-                  flag={cluster.flag}
-                  flagUrl={cluster.flagUrl}
-                  onClick={() => setActiveIdx(index)}
+                {CLUSTERS.map((cluster, index) => (
+                  <Marker
+                    key={cluster.id}
+                    location={cluster.location}
+                    isActive={index === activeIdx}
+                    label={cluster.country}
+                    flag={cluster.flag}
+                    flagUrl={cluster.flagUrl}
+                    onClick={() => setActiveIdx(index)}
+                  />
+                ))}
+
+                <OrbitControls
+                  makeDefault
+                  enableZoom={true}
+                  enablePan={false}
+                  autoRotate={false}
                 />
-              ))}
 
-              <OrbitControls
-                makeDefault
-                enableZoom={true}
-                enablePan={false}
-                autoRotate={false}
-              />
-
-              <CameraController activeIdx={activeIdx} />
+                <CameraController activeIdx={activeIdx} />
+              </Suspense>
             </Canvas>
           </div>
 
           <div
-            style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem", flexWrap: "wrap", justifyContent: "center", width: "100%" }}
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              marginTop: "1.25rem",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              width: "100%",
+            }}
           >
             <button
               onClick={handlePrev}
@@ -475,7 +494,9 @@ export default function GlobeSection() {
         </div>
 
         {/* Info & Country Selection Container */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
+        >
           {/* Active Card Details */}
           <div
             style={{
@@ -505,7 +526,8 @@ export default function GlobeSection() {
                   letterSpacing: "0.08em",
                 }}
               >
-                BENUA {activeCluster.continent.toUpperCase()} · KELOMPOK {activeCluster.no}
+                BENUA {activeCluster.continent.toUpperCase()} · KELOMPOK{" "}
+                {activeCluster.no}
               </span>
               <span
                 style={{
@@ -580,7 +602,6 @@ export default function GlobeSection() {
               </Link>
             </div>
           </div>
-
         </div>
       </div>
     </section>

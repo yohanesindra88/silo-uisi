@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./DokumentasiGallery.module.css";
 import { getCloudinaryUrl } from "@/utils/cloudinary";
 import { ImageWithLoading } from "@/components/ui/image-with-loading";
@@ -62,13 +62,13 @@ const DOC_ITEMS: DocItem[] = [
     id: "doc-9",
     src: "/dokumentasi/doc_9.webp",
     title: "Fun Games & Lempar Bola Outbound SILO 2025",
-    tag: "Outbound Maba",
+    tag: "Outbound Games",
   },
   {
     id: "doc-10",
     src: "/dokumentasi/doc_10.webp",
-    title: "Karnaval Kostum Daur Ulang & Kreativitas Mahasiswa",
-    tag: "Karnaval Daur Ulang",
+    title: "Sesi Kepemimpinan & Pengarahan Instruktur Outbound",
+    tag: "Team Building",
   },
   {
     id: "doc-11",
@@ -110,7 +110,7 @@ export default function DokumentasiGallery({ items }: DokumentasiGalleryProps = 
     setCurrentIndex((prev) => (prev <= 0 ? totalOriginal - 1 : prev - 1));
   }, [totalOriginal]);
 
-  // Auto-play interval (2.5 detik per slide)
+  // Auto-play interval (2.8 detik per slide)
   useEffect(() => {
     if (isPaused || selectedImage) return;
 
@@ -221,7 +221,7 @@ export default function DokumentasiGallery({ items }: DokumentasiGalleryProps = 
               onClick={() => setSelectedImage(null)}
               aria-label="Close image modal"
             >
-              ×
+              &times;
             </button>
             <ImageWithLoading
               src={getCloudinaryUrl(selectedImage.src)}

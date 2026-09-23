@@ -110,7 +110,7 @@ const MEMBERS: Member[] = [
   // SC & Acara
   { id: "6", name: "Jefranda Dinata", prodi: "Ekonomi Syariah", role: "Koordinator SC & Acara", divisionId: "acara", divisionName: "SC & Acara", image: "/jefranda_dinata.webp" },
   { id: "7", name: "Khairun Niza", prodi: "Manajemen", role: "Wakil Koordinator SC & Acara", divisionId: "acara", divisionName: "SC & Acara", image: "/khairun_niza.webp" },
-  { id: "8", name: "Melly Mutiara", prodi: "Manajemen", role: "Anggota SC", divisionId: "acara", divisionName: "SC & Acara" , image: "/fotoAnggota/SC&Acara/Melly Mutiara.JPG" },
+  { id: "8", name: "Melly Mutiara", prodi: "Manajemen", role: "Anggota SC", divisionId: "acara", divisionName: "SC & Acara" , image: "/fotoAnggota/SC&Acara/Melly Mutiara.jpg" },
   { id: "9", name: "Muhaemit", prodi: "Manajemen", role: "Anggota SC", divisionId: "acara", divisionName: "SC & Acara" , image: "/fotoAnggota/SC&Acara/Muhaemit.jpg" },
   { id: "10", name: "Novi Risma Ameliasari", prodi: "Teknik Kimia", role: "Anggota SC", divisionId: "acara", divisionName: "SC & Acara" , image: "/fotoAnggota/SC&Acara/Novi Risma Amelia Sari.jpg" },
   { id: "11", name: "Regitha Eka Purwananditha Candraningtyas", prodi: "Sistem Informasi", role: "Anggota SC", divisionId: "acara", divisionName: "SC & Acara" , image: "/fotoAnggota/SC&Acara/Regitha Eka Purwananditha Candraningtyas.jpg" },
@@ -164,7 +164,6 @@ const MEMBERS: Member[] = [
   { id: "63", name: "Pradita Syifa Azizah", prodi: "Akuntansi", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Pradita Syifa Azizah.jpg" },
   { id: "64", name: "Siti Nur Solika Anwar", prodi: "Akuntansi", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Siti Nur Solika Anwar.jpg" },
   { id: "65", name: "Muhammad Fahri Hidayat", prodi: "Teknik Logistik", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Muhammad Fahri Hidayat.jpg" },
-  { id: "66", name: "Abid Naufal Arifin", prodi: "Teknik Logistik", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Abid Naufal Arifin.jpg" },
   { id: "67", name: "Fauzan Ali Subhan", prodi: "Teknik Logistik", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Fauzan Ali Subhan.jpg" },
   { id: "68", name: "Airlangga Putra Andhika", prodi: "Teknik Kimia", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Airlangga Putra Andhika.png" },
   { id: "69", name: "Maria Fransiska Cicilia", prodi: "Teknik Kimia", role: "Anggota Medis", divisionId: "medis", divisionName: "Medis" , image: "/fotoAnggota/Medis/Maria Fransiska Cicilia.jpg" },
@@ -189,7 +188,7 @@ const MEMBERS: Member[] = [
   { id: "86", name: "Wulansari", prodi: "Ekonomi Syariah", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Wulansari.jpg" },
   { id: "87", name: "Putra Rizqullah Rakha Atmajaya", prodi: "Teknik Logistik", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Putra Rizqullah Rakha Atmajaya.jpg" },
   { id: "88", name: "Adya Riski Dimas Riadi", prodi: "Akuntansi", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Adya Riski Dimas Riadi.jpg" },
-  { id: "89", name: "Robby Irham Nasution", prodi: "Teknik Logistik", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Robby Irham Nasution.jpg" },
+  { id: "89", name: "Abid Naufal Arifin", prodi: "Teknik Logistik", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Medis/Abid Naufal Arifin.jpg" },
   { id: "90", name: "Muhammad Ierfan Fathy", prodi: "Manajemen", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Muhammad Ierfan Fathy.jpg" },
   { id: "91", name: "Farrel Ozora Samuel Samosir", prodi: "Teknologi Industri Pertanian", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Farrel Ozora Samuel Samosir.jpg" },
   { id: "92", name: "Muhammad Fata Azzaki", prodi: "Informatika", role: "Anggota Mentor Kelompok", divisionId: "mentor", divisionName: "Mentor" , image: "/fotoAnggota/Mentor Kelompok/Muhammad Fata Azzaki.jpg" },
@@ -331,11 +330,11 @@ export default function AnggotaDivisi() {
       <div className={styles.membersGrid}>
         {displayedMembers.length > 0 ? (
           displayedMembers.map((member) => {
-            // Seluruh foto — termasuk /fotoAnggota — kini lewat pipeline varian.
-            // Selain memperkecil ukuran, ini memperbaiki potret di direktori
-            // "SC&Acara": karakter "&" pada path membuat optimizer next/image
-            // membalas 400, sedangkan slug varian mengubahnya jadi "sc-acara".
-            const memberImageSrc = member.image ? getCloudinaryUrl(member.image, 0) : "";
+            const memberImageSrc = member.image?.startsWith("/fotoAnggota") 
+              ? member.image 
+              : member.image 
+                ? getCloudinaryUrl(member.image, 0) 
+                : "";
 
             return (
             <div 
@@ -411,7 +410,7 @@ export default function AnggotaDivisi() {
               <div className={styles.modalPhotoBox}>
                 {selectedMember.image ? (
                   <Image 
-                    src={getCloudinaryUrl(selectedMember.image, 0)}
+                    src={selectedMember.image.startsWith("/fotoAnggota") ? selectedMember.image : getCloudinaryUrl(selectedMember.image, 0)} 
                     alt={selectedMember.name} 
                     fill
                     style={{ objectFit: 'cover', objectPosition: 'top' }} 

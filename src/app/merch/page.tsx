@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import styles from "../page.module.css";
+import Footer from "../components/Footer";
 import { 
   Shirt, 
   Sparkles, 
@@ -12,67 +13,12 @@ import {
   Camera, 
   MessageCircle, 
   Mail, 
-  ArrowLeft 
+  ArrowLeft,
+  Send
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
-
-const merchandiseList = [
-  {
-    id: 1,
-    name: "Kaos Aethera (Hitam)",
-    price: "Rp 95.000",
-    icon: <Shirt size={54} color="#1F4B5D" />,
-    desc: "Bahan cotton combed 30s, nyaman dipakai. Desain eksklusif AETHERA SILO UISI 2026.",
-    colorStart: "#FFE0D0",
-    colorEnd: "#FFD166"
-  },
-  {
-    id: 2,
-    name: "Sticker Pack Rasi",
-    price: "Rp 20.000",
-    icon: <Sparkles size={54} color="#1F4B5D" />,
-    desc: "Kumpulan stiker vinyl anti air dengan logo masing-masing kelompok rasi.",
-    colorStart: "#E8D5F5",
-    colorEnd: "#D4EAFF"
-  },
-  {
-    id: 3,
-    name: "Totebag Orbit",
-    price: "Rp 55.000",
-    icon: <ShoppingBag size={54} color="#1F4B5D" />,
-    desc: "Kanvas tebal dengan sablon logo Aethera. Cocok untuk membawa laptop dan buku.",
-    colorStart: "#D4EAFF",
-    colorEnd: "#D5F5E3"
-  },
-  {
-    id: 4,
-    name: "Pin Enamel Aethera",
-    price: "Rp 15.000",
-    icon: <Award size={54} color="#1F4B5D" />,
-    desc: "Pin enamel premium untuk disematkan di lanyard atau tas.",
-    colorStart: "#D5F5E3",
-    colorEnd: "#FFD166"
-  },
-  {
-    id: 5,
-    name: "Lanyard Eksklusif",
-    price: "Rp 35.000",
-    icon: <Tag size={54} color="#1F4B5D" />,
-    desc: "Lanyard tebal 2cm dengan desain Aethera 2026 dan ID card holder.",
-    colorStart: "#FFD166",
-    colorEnd: "#FFE0D0"
-  },
-  {
-    id: 6,
-    name: "Tumbler Aethera",
-    price: "Rp 75.000",
-    icon: <Coffee size={54} color="#1F4B5D" />,
-    desc: "Tumbler stainless steel 500ml untuk menemanimu selama kegiatan kampus.",
-    colorStart: "#A2D2FF",
-    colorEnd: "#E8D5F5"
-  }
-];
+import { MERCH_ITEMS } from "../../data/merchData";
 
 export default function MerchPage() {
   return (
@@ -111,7 +57,7 @@ export default function MerchPage() {
           maxWidth: "1100px",
           marginInline: "auto"
         }}>
-          {merchandiseList.map((item) => (
+          {MERCH_ITEMS.map((item) => (
             <div key={item.id} style={{ 
               backgroundColor: "#ffffff", 
               borderRadius: "24px", 
@@ -126,7 +72,7 @@ export default function MerchPage() {
               <div style={{ 
                 width: "100%", 
                 height: "220px", 
-                background: `linear-gradient(135deg, ${item.colorStart}, ${item.colorEnd})`,
+                background: item.gradient,
                 borderRadius: "16px",
                 display: "flex",
                 alignItems: "center",
@@ -134,12 +80,16 @@ export default function MerchPage() {
                 fontSize: "5rem",
                 marginBottom: "1.5rem"
               }}>
-                {item.icon}
+                {item.image ? (
+                  <img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "1rem" }} />
+                ) : (
+                  <item.icon size={54} color="#1F4B5D" />
+                )}
               </div>
               
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
                 <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--color-dark)", margin: 0 }}>
-                  {item.name}
+                  {item.title}
                 </h3>
                 <span style={{ 
                   backgroundColor: "var(--color-dark)", 
@@ -158,70 +108,34 @@ export default function MerchPage() {
                 {item.desc}
               </p>
               
-              <button style={{ 
-                width: "100%", 
-                padding: "0.85rem", 
-                backgroundColor: "#F3F4F6", 
-                color: "var(--color-dark)", 
-                border: "none", 
-                borderRadius: "12px", 
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}>
+              <a 
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdEwUkcCb-dL2PYjVbKn6E95NEmCbOHrbrX9d06GZJY572hkQ/viewform?usp=publish-editor"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ 
+                  width: "100%", 
+                  padding: "0.85rem", 
+                  backgroundColor: "#F3F4F6", 
+                  color: "var(--color-dark)", 
+                  border: "none", 
+                  borderRadius: "12px", 
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  display: "block",
+                  textAlign: "center",
+                  textDecoration: "none"
+                }}
+              >
                 Pre-order Sekarang
-              </button>
+              </a>
             </div>
           ))}
         </div>
       </main>
 
-      {/* ===== FOOTER ===== */}
-      <footer className={styles.footer}>
-        <div>
-          <div className={styles.footerLogo}>
-            <Hexagon style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} size={18} color="var(--lp-aqua)" /> AETHERA SILO UISI 2026
-          </div>
-          <p className={styles.footerDesc}>
-            Sistem Informasi & Layanan Orientasi — Portal resmi AETHERA SILO UISI 2026
-            Universitas Internasional Semen Indonesia.
-          </p>
-          <div style={{ display: "flex", gap: "0.85rem", marginTop: "1rem", color: "rgba(255,255,255,0.7)" }}>
-            <span style={{ cursor: "pointer" }}><Camera size={18} /></span>
-            <span style={{ cursor: "pointer" }}><MessageCircle size={18} /></span>
-            <span style={{ cursor: "pointer" }}><Mail size={18} /></span>
-          </div>
-        </div>
-
-        <div>
-          <div className={styles.footerColTitle}>Menu</div>
-          <div className={styles.footerLinks}>
-            <Link href="/#about">Tentang</Link>
-            <Link href="/#logo">Filosofi Logo</Link>
-            <Link href="/#countdown">Countdown</Link>
-          </div>
-        </div>
-
-        <div>
-          <div className={styles.footerColTitle}>Unduhan</div>
-          <div className={styles.footerLinks}>
-            <Link href="#">Twibbon</Link>
-            <Link href="#">Rundown</Link>
-            <Link href="#">Nametag</Link>
-          </div>
-        </div>
-
-        <div>
-          <div className={styles.footerColTitle}>Kontak</div>
-          <div className={styles.footerLinks}>
-            <a href="https://www.instagram.com/silouisi2026?igsh=MThqZ2Z1YXAzcng1ZA==" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://www.tiktok.com/@branarasilouisi2025?_r=1&_t=ZS-98iD5zNgHEi" target="_blank" rel="noopener noreferrer">TikTok</a>
-            <a href="https://wa.me/6289667151265" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            <a href="mailto:pkkmb@uisi.ac.id">Email</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

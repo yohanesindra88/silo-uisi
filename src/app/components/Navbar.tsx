@@ -139,8 +139,8 @@ export default function Navbar() {
             style={{ objectFit: "contain" }}
           />
           <span className={styles.logoTextFull}>AETHERA SILO UISI 2026</span>
-          <span className={styles.logoTextMedium}>AETHERA SILO 2026</span>
-          <span className={styles.logoTextShort}>AETHERA SILO</span>
+          <span className={styles.logoTextMedium}>SILO UISI 2026</span>
+          <span className={styles.logoTextShort}>SILO UISI 2026</span>
         </Link>
 
         {/* Desktop Nav Links (> 1024px) */}
@@ -177,7 +177,7 @@ export default function Navbar() {
                 <Users size={16} className={styles.dropdownIcon} /> Panitia SILO
               </Link>
               <Link href="/penugasan" className={styles.dropdownItem} onClick={() => setJelajahDropdownOpen(false)}>
-                <BookOpen size={16} className={styles.dropdownIcon} /> Penugasan &amp; Guidebook
+                <BookOpen size={16} className={styles.dropdownIcon} /> Guidebook
               </Link>
               <Link href="/kelompok" className={styles.dropdownItem} onClick={() => setJelajahDropdownOpen(false)}>
                 <Globe size={16} className={styles.dropdownIcon} /> Cluster Kelompok
@@ -277,7 +277,7 @@ export default function Navbar() {
                   className={`${styles.mobileSubLink} ${isActive("/penugasan") ? styles.mobileActiveSubLink : ""}`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <BookOpen size={17} style={{ color: "var(--lp-aqua)" }} /> Penugasan &amp; Guidebook
+                  <BookOpen size={17} style={{ color: "var(--lp-aqua)" }} /> Guidebook
                 </Link>
                 <Link
                   href="/kelompok"
