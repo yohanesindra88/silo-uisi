@@ -179,8 +179,8 @@ export async function scanImageFileWithJsQR(file: File): Promise<string> {
         }
 
         reject(new Error("QR Code tidak terdeteksi dari foto. Pastikan posisi tegak, jelas, dan pencahayaan cukup."));
-      } catch (err: any) {
-        reject(err);
+      } catch (err: unknown) {
+        reject(err instanceof Error ? err : new Error(String(err)));
       }
     };
 
@@ -202,6 +202,7 @@ export class LiveQrScanner {
   private stream: MediaStream | null = null;
   private animFrameId: number | null = null;
   private isScanning = false;
+  private isPaused = false;
   private onScanCallback: ((data: string) => void) | null = null;
   private lastScannedText = "";
   private lastScannedTime = 0;
@@ -236,13 +237,28 @@ export class LiveQrScanner {
     }
 
     this.isScanning = true;
+    this.isPaused = false;
     this.tick();
+  }
+
+  pause(): void {
+    this.isPaused = true;
+  }
+
+  resume(): void {
+    this.isPaused = false;
+    // Beri jeda debounce agar tidak membaca ulang QR yang sama
+    this.lastScannedTime = Date.now();
+  }
+
+  get paused(): boolean {
+    return this.isPaused;
   }
 
   private tick = () => {
     if (!this.isScanning || !this.video || !this.canvas) return;
 
-    if (this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    if (!this.isPaused && this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
       const decoded = scanVideoFrame(this.video, this.canvas);
       if (decoded) {
         const now = Date.now();

@@ -20,6 +20,7 @@ import { LiveQrScanner, scanImageFileWithJsQR } from "@/utils/qr-scanner";
 import { MobileShell } from "@/components/ui/mobile-shell";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { getAllowedProdisForMentor } from "@/config/attendance";
+import { ScanResultModal, ScanResultData } from "@/components/scanner/ScanResultModal";
 
 export interface SessionItem {
   id: number;
@@ -99,6 +100,11 @@ export default function QrAttendanceScanner({
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+
+  // Modal Pop-Up Hasil Scan
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [modalResultData, setModalResultData] = useState<ScanResultData | null>(null);
+
   const [recentScans, setRecentScans] = useState<
     Array<{ nim: string; nama: string; prodi?: string; kelompok?: string; time: string; status: string }>
   >([]);
@@ -228,10 +234,26 @@ export default function QrAttendanceScanner({
     currentUser && (currentUser.role === "admin" || currentUser.role === "panitia");
   const isMentor = currentUser && currentUser.role === "mentor";
 
-  // Daftar prodi yang berhak dipindai mentor ini jika sesi PRODI
-  const mentorAllowedProdis = isMentor ? getAllowedProdisForMentor(currentUser.prodi) : [];
+  const mentorAllowedProdis = isMentor ? getAllowedProdisForMentor(currentUser.prodi || undefined) : [];
 
-  // 2. Fungsi Memproses Hasil Scan QR
+  // 2. Helper Penanganan Modal Hasil Scan & Jeda Scanner
+  const handleCloseResultModal = useCallback(() => {
+    setIsResultModalOpen(false);
+    // Lanjutkan scanning dengan jeda aman agar tidak membaca ulang QR yang sama
+    setTimeout(() => {
+      liveScannerRef.current?.resume();
+    }, 350);
+  }, []);
+
+  const triggerScanResult = useCallback((resultData: ScanResultData) => {
+    setScanResult(resultData as ScanResult);
+    setModalResultData(resultData);
+    setIsResultModalOpen(true);
+    // Jeda pembacaan frame saat modal pop-up tampil di layar
+    liveScannerRef.current?.pause();
+  }, []);
+
+  // 3. Fungsi Memproses Hasil Scan QR
   const handleProcessScan = async (qrTokenOrNim: string) => {
     const cleanToken = String(qrTokenOrNim || "").trim();
     if (!cleanToken) return;
@@ -247,7 +269,7 @@ export default function QrAttendanceScanner({
 
     if (!selectedSessionId || sessions.length === 0) {
       playBeep(false);
-      setScanResult({
+      triggerScanResult({
         type: "warning",
         title: "Tidak Ada Sesi Aktif",
         message: "Saat ini tidak ada sesi kegiatan yang aktif sesuai jadwal. Presensi ditutup.",
@@ -274,6 +296,7 @@ export default function QrAttendanceScanner({
 
       const result = await res.json();
       const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const currentSessionName = selectedSessionObj?.name;
 
       if (res.ok && result.success) {
         playBeep(true);
@@ -284,7 +307,7 @@ export default function QrAttendanceScanner({
         const prodi = maba?.prodi || "-";
         const kelompok = maba?.group?.name || "-";
 
-        setScanResult({
+        triggerScanResult({
           type: status === "Terlambat" ? "warning" : "success",
           title: status === "Terlambat" ? "Presensi Diterima (Terlambat)" : "Presensi Berhasil (Tepat Waktu)",
           message: status === "Terlambat"
@@ -296,6 +319,7 @@ export default function QrAttendanceScanner({
           kelompok,
           status,
           time: timeStr,
+          sessionName: currentSessionName,
         });
 
         setRecentScans((prev) => [
@@ -310,7 +334,7 @@ export default function QrAttendanceScanner({
         const prodi = maba?.prodi || "-";
         const kelompok = maba?.group?.name || "-";
 
-        setScanResult({
+        triggerScanResult({
           type: "info",
           title: "Sudah Presensi Sebelumnya",
           message: result.message || "Mahasiswa ini telah tercatat hadir pada sesi yang dipilih.",
@@ -319,11 +343,12 @@ export default function QrAttendanceScanner({
           prodi,
           kelompok,
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else if (result.code === "UNAUTHORIZED_GROUP") {
         playBeep(false);
         const maba = result.data?.maba;
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Di Luar Kelompok Binaan",
           message: result.message || "Mahasiswa ini tidak terdaftar di dalam kelompok binaan Anda.",
@@ -332,11 +357,12 @@ export default function QrAttendanceScanner({
           prodi: maba?.prodi,
           kelompok: maba?.group?.name,
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else if (result.code === "UNAUTHORIZED_PRODI") {
         playBeep(false);
         const maba = result.data?.maba;
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Di Luar Kewenangan Prodi",
           message: result.message || "Sebagai mentor prodi ini, Anda tidak memiliki izin untuk memindai prodi mahasiswa terkait.",
@@ -346,39 +372,45 @@ export default function QrAttendanceScanner({
           kelompok: maba?.group?.name,
           allowedProdis: result.data?.allowedProdis,
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else if (result.code === "SESSION_NOT_STARTED" || result.code === "SESSION_ENDED") {
         playBeep(false);
-        setScanResult({
+        triggerScanResult({
           type: "warning",
           title: result.code === "SESSION_NOT_STARTED" ? "Sesi Belum Dimulai" : "Sesi Telah Berakhir",
-          message: result.message,
+          message: result.message || "Sesi kegiatan belum dimulai atau telah ditutup.",
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else if (result.code === "USER_NOT_FOUND") {
         playBeep(false);
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Mahasiswa Tidak Ditemukan",
           message: result.message || `Data QR/NIM "${cleanToken}" tidak terdaftar di sistem.`,
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else {
         playBeep(false);
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Presensi Gagal",
           message: result.message || "Terjadi kendala saat memproses presensi QR.",
           time: timeStr,
+          sessionName: currentSessionName,
         });
       }
     } catch (err) {
       console.error("Gagal memproses presensi:", err);
       playBeep(false);
-      setScanResult({
+      triggerScanResult({
         type: "error",
         title: "Koneksi Bermasalah",
         message: "Tidak dapat terhubung ke server presensi. Silakan periksa jaringan Anda.",
+        time: new Date().toLocaleTimeString("id-ID"),
+        sessionName: selectedSessionObj?.name,
       });
     } finally {
       setTimeout(() => {
@@ -392,7 +424,7 @@ export default function QrAttendanceScanner({
     handleProcessScanRef.current = handleProcessScan;
   });
 
-  // 3. Meminta Izin Kamera dan Menjalankan Scanner Live via jsQR
+  // 4. Meminta Izin Kamera dan Menjalankan Scanner Live via jsQR
   const requestCameraAccess = useCallback(async () => {
     setPermissionError(null);
 
@@ -417,6 +449,9 @@ export default function QrAttendanceScanner({
 
       await liveScannerRef.current.start();
       setIsScanning(true);
+      try {
+        localStorage.setItem("silo_camera_always_allowed", "true");
+      } catch {}
       setPermissionError(null);
     } catch (err: unknown) {
       console.warn("Gagal inisialisasi scanner live jsQR:", err);
@@ -426,7 +461,7 @@ export default function QrAttendanceScanner({
       const errStr = String(errObj?.name || errObj?.message || err);
       if (errStr.includes("NotAllowedError") || errStr.includes("Permission denied")) {
         setPermissionError(
-          "Izin akses kamera ditolak oleh browser/sistem HP. Silakan buka Pengaturan Izin Situs pada browser Anda, ubah izin kamera menjadi 'Izinkan' (Allow), lalu ketuk tombol 'Minta Izin & Buka Kamera' di bawah."
+          "Izin akses kamera ditolak oleh browser/sistem HP. Silakan buka Pengaturan Izin Situs pada browser Anda, ubah izin kamera menjadi 'Selalu Izinkan' (Always Allow), lalu ketuk tombol 'Minta Izin & Buka Kamera' di bawah."
         );
       } else if (errStr.includes("NotFoundError") || errStr.includes("DevicesNotFoundError")) {
         setPermissionError("Kamera tidak terdeteksi pada perangkat ini.");
@@ -441,6 +476,30 @@ export default function QrAttendanceScanner({
       }
     }
   }, []);
+
+  // 5. Query Permission Otomatis ("Always Allow" Detection & Listener)
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      try {
+        navigator.permissions
+          .query({ name: "camera" as PermissionName })
+          .then((permissionStatus) => {
+            if (permissionStatus.state === "granted") {
+              requestCameraAccess();
+            }
+
+            permissionStatus.onchange = () => {
+              if (permissionStatus.state === "granted") {
+                requestCameraAccess();
+              }
+            };
+          })
+          .catch(() => {
+            // Browser tidak mengizinkan query camera permission
+          });
+      } catch {}
+    }
+  }, [requestCameraAccess]);
 
   // Scan via foto kamera HP langsung menggunakan jsQR 4-Pass Multi-Algorithm
   const handleFileScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -459,11 +518,12 @@ export default function QrAttendanceScanner({
       console.warn("Gagal scan dari foto via jsQR:", err);
       playBeep(false);
       const errObj = err as { message?: string };
-      setScanResult({
+      triggerScanResult({
         type: "error",
         title: "QR Tidak Terdeteksi",
         message: errObj?.message || "Tidak dapat mendeteksi QR Code dari foto. Pastikan posisi tegak, jelas, dan pencahayaan cukup.",
         time: new Date().toLocaleTimeString("id-ID"),
+        sessionName: selectedSessionObj?.name,
       });
     } finally {
       setIsProcessing(false);
@@ -474,7 +534,7 @@ export default function QrAttendanceScanner({
   useEffect(() => {
     const timer = setTimeout(() => {
       requestCameraAccess();
-    }, 400);
+    }, 300);
     return () => clearTimeout(timer);
   }, [requestCameraAccess]);
 
@@ -740,7 +800,7 @@ export default function QrAttendanceScanner({
           boxShadow: "0 6px 20px rgba(31, 75, 93, 0.06)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span
               style={{
@@ -1328,6 +1388,16 @@ export default function QrAttendanceScanner({
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* 🚀 MODAL POP-UP FEEDBACK LANGSUNG HASIL SCAN QR          */}
+      {/* ======================================================== */}
+      <ScanResultModal
+        isOpen={isResultModalOpen}
+        onClose={handleCloseResultModal}
+        data={modalResultData}
+        autoCloseSeconds={4}
+      />
     </MobileShell>
   );
 }

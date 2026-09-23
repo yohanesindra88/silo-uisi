@@ -243,18 +243,29 @@ export class AttendanceModel {
       }
     }
 
-    // 5. Cek apakah sudah pernah presensi di sesi ini
-    const existing = await this.checkAlreadyAttended(maba.id, session.id);
-    if (existing) {
-      const timeStr = existing.scannedAt
-        ? new Date(existing.scannedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+    // 5. Cek data presensi di sesi ini (cek apakah ada record aktif atau soft-deleted)
+    const existingRecord = await prisma.attendance.findFirst({
+      where: {
+        mabaId: maba.id,
+        sessionsId: session.id,
+      },
+      include: {
+        session: true,
+        scanner: true,
+      },
+    });
+
+    // Jika record ADA dan masih AKTIF (deletedAt === null), tolak dengan ALREADY_ATTENDED
+    if (existingRecord && existingRecord.deletedAt === null) {
+      const timeStr = existingRecord.scannedAt
+        ? new Date(existingRecord.scannedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
         : "-";
       return {
         success: false,
         code: "ALREADY_ATTENDED",
-        message: `Mahasiswa ${maba.nama} (${maba.nim || maba.username}) sudah tercatat presensi pada pukul ${timeStr} WIB (${existing.status}).`,
+        message: `Mahasiswa ${maba.nama} (${maba.nim || maba.username}) sudah tercatat presensi pada pukul ${timeStr} WIB (${existingRecord.status}).`,
         data: {
-          ...existing,
+          ...existingRecord,
           maba: {
             id: maba.id,
             nama: maba.nama,
@@ -272,37 +283,72 @@ export class AttendanceModel {
     const maxOnTime = new Date(session.endSessions.getTime() + toleranceMs);
     const status = isTestSession || scanTime <= maxOnTime ? "Hadir" : "Terlambat";
 
-    // 7. Simpan ke database (groupsId tetap merujuk ke kelompok asal maba)
+    // 7. Simpan atau Pulihkan (Restore) ke database
+    // Jika record sebelumnya berstatus soft-deleted (deletedAt !== null), pulihkan (restore/update) record tersebut
+    // agar data presensi baru tercatat dan tidak melanggar unique constraint (mabaId, sessionsId) di tabel t_attendances.
     try {
-      const attendance = await prisma.attendance.create({
-        data: {
-          mabaId: maba.id,
-          scannedBy: scannedBy ?? null,
-          sessionsId: session.id,
-          groupsId: maba.mGroupsId,
-          scannedAt: scanTime,
-          status,
-        },
-        include: {
-          maba: {
-            select: {
-              id: true,
-              nama: true,
-              nim: true,
-              prodi: true,
-              group: true,
+      let attendance;
+      if (existingRecord) {
+        attendance = await prisma.attendance.update({
+          where: { id: existingRecord.id },
+          data: {
+            deletedAt: null,
+            scannedAt: scanTime,
+            scannedBy: scannedBy ?? null,
+            groupsId: maba.mGroupsId,
+            status,
+          },
+          include: {
+            maba: {
+              select: {
+                id: true,
+                nama: true,
+                nim: true,
+                prodi: true,
+                group: true,
+              },
+            },
+            session: true,
+            scanner: {
+              select: {
+                id: true,
+                nama: true,
+                role: true,
+              },
             },
           },
-          session: true,
-          scanner: {
-            select: {
-              id: true,
-              nama: true,
-              role: true,
+        });
+      } else {
+        attendance = await prisma.attendance.create({
+          data: {
+            mabaId: maba.id,
+            scannedBy: scannedBy ?? null,
+            sessionsId: session.id,
+            groupsId: maba.mGroupsId,
+            scannedAt: scanTime,
+            status,
+          },
+          include: {
+            maba: {
+              select: {
+                id: true,
+                nama: true,
+                nim: true,
+                prodi: true,
+                group: true,
+              },
+            },
+            session: true,
+            scanner: {
+              select: {
+                id: true,
+                nama: true,
+                role: true,
+              },
             },
           },
-        },
-      });
+        });
+      }
 
       const lateNotice = status === "Terlambat" ? " (Terlambat - Melebihi batas toleransi)" : " (Hadir - Tepat Waktu)";
 
@@ -316,7 +362,58 @@ export class AttendanceModel {
       // Tangani Prisma Unique Constraint Violation (P2002) untuk kondisi balapan / race condition
       const prismaError = err as { code?: string };
       if (prismaError?.code === "P2002") {
-        const doubleCheck = await this.checkAlreadyAttended(maba.id, session.id);
+        const doubleCheck = await prisma.attendance.findFirst({
+          where: { mabaId: maba.id, sessionsId: session.id },
+          include: {
+            session: true,
+            scanner: true,
+          },
+        });
+
+        // Jika doubleCheck ternyata soft-deleted, lakukan update restore
+        if (doubleCheck && doubleCheck.deletedAt !== null) {
+          const restored = await prisma.attendance.update({
+            where: { id: doubleCheck.id },
+            data: {
+              deletedAt: null,
+              scannedAt: scanTime,
+              scannedBy: scannedBy ?? null,
+              groupsId: maba.mGroupsId,
+              status,
+            },
+            include: {
+              maba: {
+                select: {
+                  id: true,
+                  nama: true,
+                  nim: true,
+                  prodi: true,
+                  group: true,
+                },
+              },
+              session: true,
+              scanner: {
+                select: {
+                  id: true,
+                  nama: true,
+                  role: true,
+                },
+              },
+            },
+          });
+          const lateNotice = status === "Terlambat" ? " (Terlambat - Melebihi batas toleransi)" : " (Hadir - Tepat Waktu)";
+          return {
+            success: true,
+            code: "SUCCESS",
+            message: `Presensi berhasil dicatat: ${maba.nama}${lateNotice}.`,
+            data: restored,
+          };
+        }
+
+        const timeStr = doubleCheck?.scannedAt
+          ? new Date(doubleCheck.scannedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+          : "-";
+
         return {
           success: false,
           code: "ALREADY_ATTENDED",

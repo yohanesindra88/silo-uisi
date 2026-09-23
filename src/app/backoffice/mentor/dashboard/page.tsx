@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { MobileShell } from "@/components/ui/mobile-shell";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
@@ -11,7 +11,6 @@ import {
   Users,
   CheckCircle2,
   AlertTriangle,
-  XCircle,
   Clock,
   Calendar,
   Shield,
@@ -19,21 +18,24 @@ import {
   ShieldCheck,
   Camera,
   RefreshCw,
-  Sparkles,
   Search,
   X,
-  User,
-  ExternalLink,
   ChevronRight,
   PackageCheck,
+  GraduationCap,
+  AlertCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ScanResultModal, ScanResultData } from "@/components/scanner/ScanResultModal";
+import { getAllowedProdisForMentor } from "@/config/attendance";
 
 interface UserProfile {
   id: number;
   nama: string;
   role: string;
   nim?: string | null;
+  prodi?: string | null;
+  fakultas?: string | null;
   mentored_groups?: Array<{ group_id: number; group_name: string }>;
 }
 
@@ -50,7 +52,33 @@ interface SessionItem {
   is_active: boolean;
 }
 
-const formatSessionDate = (dateVal?: any): string => {
+interface MabaItem {
+  id: number;
+  nama: string;
+  nim?: string | null;
+  username?: string | null;
+  mGroupsId?: number | null;
+  group?: { id?: number; name?: string } | null;
+}
+
+interface AttendanceItem {
+  id: number;
+  mabaId?: number;
+  groupsId?: number;
+  status: string;
+  scannedAt?: string;
+  createdAt?: string;
+  maba?: {
+    id?: number;
+    nama?: string;
+    nim?: string;
+    username?: string;
+    mGroupsId?: number;
+    group?: { id?: number; name?: string };
+  };
+}
+
+const formatSessionDate = (dateVal?: string | Date | null): string => {
   if (!dateVal) return "-";
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return "-";
@@ -61,7 +89,7 @@ const formatSessionDate = (dateVal?: any): string => {
   return `${day} ${month} ${year}`;
 };
 
-const formatSessionTime = (dateVal?: any): string => {
+const formatSessionTime = (dateVal?: string | Date | null): string => {
   if (!dateVal) return "-";
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return "-";
@@ -85,26 +113,18 @@ interface SubmissionItem {
   };
 }
 
-interface ScanResultBanner {
-  type: "success" | "warning" | "error" | "info";
-  title: string;
-  message: string;
-  mabaNama?: string;
-  time?: string;
-}
-
 export default function MentorDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [submissions, setSubmissions] = useState<SubmissionItem[]>([]);
-  const [groupMaba, setGroupMaba] = useState<any[]>([]);
+  const [groupMaba, setGroupMaba] = useState<MabaItem[]>([]);
   const [mentoredGroupIds, setMentoredGroupIds] = useState<number[]>([]);
   const [groupHadirCount, setGroupHadirCount] = useState<number>(0);
   const [groupBelumCount, setGroupBelumCount] = useState<number>(0);
-  const [attendedMabas, setAttendedMabas] = useState<any[]>([]);
-  const [unattendedMabas, setUnattendedMabas] = useState<any[]>([]);
+  const [attendedMabas, setAttendedMabas] = useState<AttendanceItem[]>([]);
+  const [unattendedMabas, setUnattendedMabas] = useState<MabaItem[]>([]);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [attendanceModalTab, setAttendanceModalTab] = useState<"hadir" | "belum">("hadir");
   const [attendanceSearchQuery, setAttendanceSearchQuery] = useState("");
@@ -114,8 +134,13 @@ export default function MentorDashboardPage() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [scanResult, setScanResult] = useState<ScanResultBanner | null>(null);
   const [isProcessingScan, setIsProcessingScan] = useState(false);
+
+  // Modal Pop-Up Hasil Scan & Input Manual NIM
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [modalResultData, setModalResultData] = useState<ScanResultData | null>(null);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualNim, setManualNim] = useState("");
 
   const liveScannerRef = useRef<LiveQrScanner | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -125,38 +150,47 @@ export default function MentorDashboardPage() {
 
   // Helper untuk memuat data kehadiran maba kelompok binaan dari DB
   const refreshAttendanceCounts = useCallback(
-    async (sessionId: number, mabaList: any[], gIds: number[]) => {
+    async (sessionId: number, mabaList: MabaItem[], gIds: number[]) => {
       if (!sessionId) return;
       try {
         const attRes = await fetch(`/api/attendance?sessionId=${sessionId}`);
         if (attRes.ok) {
           const attData = await attRes.json();
-          const rawAttendances: any[] = attData.data || [];
+          const rawAttendances: AttendanceItem[] = attData.data || [];
 
-          const mabaIds = new Set(mabaList.map((m: any) => m.id));
-          const mabaNims = new Set(mabaList.map((m: any) => m.nim || m.username));
+          const mabaIds = new Set(mabaList.map((m) => m.id));
+          const mabaNims = new Set(mabaList.map((m) => m.nim || m.username));
 
           // Filter data kehadiran yang sesuai dengan maba binaan
-          const matched = rawAttendances.filter((a: any) => {
+          const matched = rawAttendances.filter((a) => {
             const mId = a.mabaId || a.maba?.id;
             const mNim = a.maba?.nim || a.maba?.username;
             const grId = a.groupsId || a.maba?.mGroupsId || a.maba?.group?.id;
             return (
-              mabaIds.has(mId) ||
-              mabaNims.has(mNim) ||
-              (gIds.length > 0 && gIds.includes(grId))
+              (mId && mabaIds.has(mId)) ||
+              (mNim && mabaNims.has(mNim)) ||
+              (grId && gIds.length > 0 && gIds.includes(grId))
             );
           });
 
-          const attendedIds = new Set(matched.map((a: any) => a.mabaId || a.maba?.id));
-          const attendedNims = new Set(matched.map((a: any) => a.maba?.nim || a.maba?.username));
+          const attendedIds = new Set<number>();
+          const attendedNims = new Set<string>();
+          matched.forEach((a) => {
+            const idVal = a.mabaId || a.maba?.id;
+            if (idVal) attendedIds.add(idVal);
+            const nimVal = a.maba?.nim || a.maba?.username;
+            if (nimVal) attendedNims.add(nimVal);
+          });
 
           const hadirList = matched.filter(
-            (a: any) => a.status === "Hadir" || a.status === "Terlambat"
+            (a) => a.status === "Hadir" || a.status === "Terlambat"
           );
-          const belumList = mabaList.filter(
-            (m: any) => !attendedIds.has(m.id) && !attendedNims.has(m.nim || m.username)
-          );
+          const belumList = mabaList.filter((m) => {
+            const hasId = attendedIds.has(m.id);
+            const nimVal = m.nim || m.username;
+            const hasNim = Boolean(nimVal && attendedNims.has(nimVal));
+            return !hasId && !hasNim;
+          });
 
           setGroupHadirCount(hadirList.length);
           setGroupBelumCount(belumList.length);
@@ -186,7 +220,7 @@ export default function MentorDashboardPage() {
       // Kumpulkan ID kelompok yang dibimbing mentor ini
       const groupIds: number[] = [];
       if (Array.isArray(currentUser?.mentored_groups)) {
-        currentUser.mentored_groups.forEach((g: any) => {
+        currentUser.mentored_groups.forEach((g: { group_id?: number }) => {
           if (g.group_id && !groupIds.includes(g.group_id)) {
             groupIds.push(g.group_id);
           }
@@ -198,14 +232,15 @@ export default function MentorDashboardPage() {
       setMentoredGroupIds(groupIds);
 
       // Data mahasiswa binaan resmi dari database
-      let mabas: any[] = [];
+      let mabas: MabaItem[] = [];
       const usersRes = await fetch("/api/users?role=maba").catch(() => null);
       if (usersRes && usersRes.ok) {
         const uData = await usersRes.json();
         if (Array.isArray(uData.data)) {
           if (groupIds.length > 0) {
-            mabas = uData.data.filter((m: any) =>
-              groupIds.includes(m.mGroupsId || m.group?.id)
+            mabas = uData.data.filter((m: MabaItem) =>
+              m.mGroupsId && groupIds.includes(m.mGroupsId) ||
+              m.group?.id && groupIds.includes(m.group.id)
             );
           } else {
             mabas = [];
@@ -221,9 +256,16 @@ export default function MentorDashboardPage() {
         const sessData = await sessRes.json();
         const list: SessionItem[] = sessData.data || [];
         setSessions(list);
-        const active = list.find((s) => s.is_active);
+        const currentTime = new Date();
+        const activeBySchedule = list.filter((s: SessionItem) => {
+          const startVal = s.startSessions || s.start_sessions;
+          const endVal = s.endSessions || s.end_sessions;
+          if (!startVal || !endVal) return false;
+          return currentTime >= new Date(startVal) && currentTime <= new Date(endVal);
+        });
+        const active = activeBySchedule[0] || list.find((s) => s.is_active);
         const latest = [...list].sort(
-          (a: any, b: any) =>
+          (a, b) =>
             new Date(b.startSessions || b.start_sessions || 0).getTime() -
             new Date(a.startSessions || a.start_sessions || 0).getTime()
         )[0];
@@ -255,14 +297,23 @@ export default function MentorDashboardPage() {
   }, [router, refreshAttendanceCounts]);
 
   useEffect(() => {
-    loadData();
+    let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData().then(() => {
+      if (!active) return;
+    });
+    return () => {
+      active = false;
+    };
   }, [loadData]);
 
   // Audio feedback helper (Web Audio API)
   const playBeep = useCallback((success: boolean) => {
     try {
       if (typeof window === "undefined") return;
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
@@ -290,29 +341,68 @@ export default function MentorDashboardPage() {
     } catch {}
   }, []);
 
+  // Filter sesi aktif: waktu sekarang berada di antara startSessions dan endSessions
+  const now = new Date();
+  const activeSessions = sessions.filter((s: SessionItem) => {
+    const startVal = s.startSessions || s.start_sessions;
+    const endVal = s.endSessions || s.end_sessions;
+    if (!startVal || !endVal) return false;
+    return now >= new Date(startVal) && now <= new Date(endVal);
+  });
+
+  const selectedSessionObj =
+    sessions.find((s) => s.id === selectedSessionId) ||
+    activeSessions[0] ||
+    sessions[0];
+  const endSessionVal = selectedSessionObj?.endSessions || selectedSessionObj?.end_sessions;
+  const isSelectedSessionEnded = endSessionVal ? new Date() > new Date(endSessionVal) : false;
+  const isProdiSession =
+    (selectedSessionObj?.attendance_type || selectedSessionObj?.attendanceType) === "prodi";
+  const attendanceKeterangan = isProdiSession ? "Prodi" : "Kelompok";
+  const mentorAllowedProdis = useMemo(
+    () => (user?.prodi ? getAllowedProdisForMentor(user.prodi) : []),
+    [user]
+  );
+
+  // Helper Penanganan Modal Hasil Scan & Jeda Scanner
+  const handleCloseResultModal = useCallback(() => {
+    setIsResultModalOpen(false);
+    // Lanjutkan scanning dengan jeda aman agar tidak membaca ulang QR yang sama
+    setTimeout(() => {
+      liveScannerRef.current?.resume();
+    }, 350);
+  }, []);
+
+  const triggerScanResult = useCallback((resultData: ScanResultData) => {
+    setModalResultData(resultData);
+    setIsResultModalOpen(true);
+    // Jeda pembacaan frame saat modal pop-up tampil di layar
+    liveScannerRef.current?.pause();
+  }, []);
+
   // 2. Fungsi proses hasil scan QR
   const processQrCode = async (decodedText: string) => {
     const cleanToken = String(decodedText || "").trim();
     if (!cleanToken) return;
 
-    const now = Date.now();
+    const currentTime = Date.now();
     // Debounce: jika token sama terdeteksi kurang dari 3 detik, abaikan
     if (
       cleanToken === lastScannedCodeRef.current &&
-      now - lastScanTimestampRef.current < 3000
+      currentTime - lastScanTimestampRef.current < 3000
     ) {
       return;
     }
 
-    lastScanTimestampRef.current = now;
+    lastScanTimestampRef.current = currentTime;
     lastScannedCodeRef.current = cleanToken;
 
-    if (!selectedSessionId) {
+    if (!selectedSessionId || activeSessions.length === 0) {
       playBeep(false);
-      setScanResult({
+      triggerScanResult({
         type: "warning",
-        title: "Pilih Sesi Terlebih Dahulu",
-        message: "Silakan tentukan sesi kegiatan aktif pada dropdown di atas.",
+        title: "Tidak Ada Sesi Aktif",
+        message: "Saat ini tidak ada sesi kegiatan yang aktif sesuai jadwal (WIB). Presensi ditutup.",
       });
       return;
     }
@@ -337,82 +427,114 @@ export default function MentorDashboardPage() {
 
       const result = await res.json();
       const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const currentSessionName = selectedSessionObj?.name;
 
       if (res.ok && result.success) {
         playBeep(true);
         const status = result.data?.status;
         const isLate = status === "Terlambat";
-        setScanResult({
+        triggerScanResult({
           type: isLate ? "warning" : "success",
           title: isLate ? "Presensi Dicatat: Terlambat" : "Presensi Berhasil: Hadir",
           message: isLate
             ? `Tercatat melewati batas toleransi (${result.data?.session?.toleransi || 15} mnt).`
             : "Tepat waktu sesuai jadwal sesi.",
           mabaNama: result.data?.maba?.nama || "Mahasiswa",
+          nim: result.data?.maba?.nim || result.data?.maba?.username,
+          prodi: result.data?.maba?.prodi,
+          kelompok: result.data?.maba?.group?.name,
           time: timeStr,
+          status: status || (isLate ? "Terlambat" : "Hadir"),
+          sessionName: currentSessionName,
+          attendanceType: attendanceKeterangan,
         });
         // Perbarui data ringkasan kehadiran secara instan
-        refreshAttendanceCounts(selectedSessionId, groupMaba, mentoredGroupIds);
+        if (selectedSessionId) {
+          refreshAttendanceCounts(selectedSessionId, groupMaba, mentoredGroupIds);
+        }
       } else if (result.code === "ALREADY_ATTENDED") {
         playBeep(false);
-        const mabaNama = result.data?.maba?.nama || result.mabaName || "Mahasiswa";
-        setScanResult({
+        const maba = result.data?.maba;
+        const mabaNama = maba?.nama || result.mabaName || "Mahasiswa";
+        triggerScanResult({
           type: "info",
           title: "Sudah Presensi Sebelumnya",
           message: result.message || "Mahasiswa ini telah tercatat hadir pada sesi ini.",
           mabaNama,
+          nim: maba?.nim || maba?.username,
+          prodi: maba?.prodi,
+          kelompok: maba?.group?.name,
           time: timeStr,
+          status: "Sudah Hadir",
+          sessionName: currentSessionName,
+          attendanceType: attendanceKeterangan,
         });
-        refreshAttendanceCounts(selectedSessionId, groupMaba, mentoredGroupIds);
+        if (selectedSessionId) {
+          refreshAttendanceCounts(selectedSessionId, groupMaba, mentoredGroupIds);
+        }
       } else if (result.code === "SESSION_NOT_STARTED" || result.code === "SESSION_ENDED") {
         playBeep(false);
-        setScanResult({
+        triggerScanResult({
           type: "warning",
           title: result.code === "SESSION_NOT_STARTED" ? "Sesi Belum Dimulai" : "Sesi Telah Berakhir",
-          message: result.message,
+          message: result.message || "Presensi hanya dapat dilakukan selama rentang waktu sesi berlangsung.",
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else if (result.code === "USER_NOT_FOUND") {
         playBeep(false);
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Mahasiswa Tidak Ditemukan",
           message: result.message || `Data QR/NIM "${cleanToken}" tidak ditemukan dalam database.`,
           time: timeStr,
+          sessionName: currentSessionName,
         });
       } else if (result.code === "UNAUTHORIZED_GROUP") {
         playBeep(false);
         const maba = result.data?.maba;
-        setScanResult({
+        triggerScanResult({
           type: "error",
-          title: "Di Luar Kelompok Binaan",
+          title: "Bukan Mahasiswa Kelompok Binaan",
           message: result.message || "Mahasiswa tidak terdaftar di kelompok binaan Anda.",
           mabaNama: maba?.nama,
+          nim: maba?.nim || maba?.username,
+          prodi: maba?.prodi,
+          kelompok: maba?.group?.name,
           time: timeStr,
+          sessionName: currentSessionName,
+          attendanceType: "Kelompok",
         });
       } else if (result.code === "UNAUTHORIZED_PRODI") {
         playBeep(false);
         const maba = result.data?.maba;
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Di Luar Kewenangan Prodi",
-          message: result.message || "Anda tidak memiliki izin memindai prodi mahasiswa ini.",
+          message: result.message || "Anda tidak memiliki izin memindai mahasiswa di luar prodi binaan Anda.",
           mabaNama: maba?.nama,
+          nim: maba?.nim || maba?.username,
+          prodi: maba?.prodi,
+          kelompok: maba?.group?.name,
           time: timeStr,
+          sessionName: currentSessionName,
+          attendanceType: "Prodi",
+          allowedProdis: mentorAllowedProdis,
         });
       } else {
         playBeep(false);
-        setScanResult({
+        triggerScanResult({
           type: "error",
           title: "Scan Gagal",
           message: result.message || "QR Code tidak valid atau terjadi kesalahan.",
           time: timeStr,
+          sessionName: currentSessionName,
         });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Scan error:", err);
       playBeep(false);
-      setScanResult({
+      triggerScanResult({
         type: "error",
         title: "Koneksi Bermasalah",
         message: "Tidak dapat menghubungi server presensi.",
@@ -422,12 +544,21 @@ export default function MentorDashboardPage() {
     }
   };
 
+  const processQrCodeRef = useRef(processQrCode);
+  useEffect(() => {
+    processQrCodeRef.current = processQrCode;
+  });
+
   // 3. Memulai Kamera Scanner & Meminta Izin Akses ke HP (LiveQrScanner - jsQR)
   const startCamera = useCallback(async () => {
     setCameraError(null);
 
-    // Cek Secure Context (Kamera live stream butuh HTTPS atau localhost di HP)
+    // Tandai preferensi izin selalu aktif
     if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("silo_camera_always_allowed", "true");
+      } catch {}
+
       const isSecure =
         window.isSecureContext ||
         window.location.hostname === "localhost" ||
@@ -445,21 +576,21 @@ export default function MentorDashboardPage() {
 
       if (!liveScannerRef.current) {
         liveScannerRef.current = new LiveQrScanner(videoRef.current, (decodedText: string) => {
-          processQrCode(decodedText);
+          processQrCodeRef.current(decodedText);
         });
       }
 
       await liveScannerRef.current.start();
       setScannerActive(true);
       setCameraError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Gagal memulai kamera scanner:", err);
       setScannerActive(false);
 
-      const errStr = String(err?.name || err?.message || err);
+      const errStr = String(err);
       if (errStr.includes("NotAllowedError") || errStr.includes("Permission denied")) {
         setCameraError(
-          "Izin akses kamera ditolak oleh browser/sistem HP. Silakan buka Pengaturan Izin Situs pada browser Anda, ubah izin kamera menjadi 'Izinkan' (Allow), lalu ketuk 'Coba Minta Izin Lagi'."
+          "Izin akses kamera ditolak oleh browser/sistem HP. Silakan buka Pengaturan Izin Situs pada browser Anda, ubah izin kamera menjadi 'Izinkan' (Allow), lalu ketuk 'Minta Izin & Aktifkan Kamera'."
         );
       } else if (errStr.includes("NotFoundError") || errStr.includes("DevicesNotFoundError")) {
         setCameraError("Kamera tidak terdeteksi pada perangkat ini.");
@@ -471,7 +602,29 @@ export default function MentorDashboardPage() {
         setCameraError("Gagal membuka kamera scanner. Silakan coba lagi atau gunakan tombol Ambil Foto QR.");
       }
     }
-  }, [processQrCode]);
+  }, []);
+
+  // 4. Query Permission Otomatis ("Always Allow" Detection & Auto-start)
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      try {
+        navigator.permissions
+          .query({ name: "camera" as PermissionName })
+          .then((permissionStatus) => {
+            if (permissionStatus.state === "granted" && isScannerOpen && !scannerActive) {
+              startCamera();
+            }
+
+            permissionStatus.onchange = () => {
+              if (permissionStatus.state === "granted" && isScannerOpen && !scannerActive) {
+                startCamera();
+              }
+            };
+          })
+          .catch(() => {});
+      } catch {}
+    }
+  }, [isScannerOpen, scannerActive, startCamera]);
 
   // Scan via foto kamera HP langsung menggunakan jsQR Multi-Pass (kompatibel bahkan di HTTP)
   const handleFileScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -487,20 +640,29 @@ export default function MentorDashboardPage() {
       // 4-Pass multi-algorithm image detection (Full downscale, Center-crop, Contrast boost, Tight-crop)
       const decodedText = await scanImageFileWithJsQR(file);
       processQrCode(decodedText);
-    } catch (err: any) {
+    } catch (err: unknown) {
       playBeep(false);
-      setScanResult({
+      const errObj = err as { message?: string };
+      triggerScanResult({
         type: "error",
         title: "QR Tidak Terdeteksi",
         message:
-          err?.message ||
+          errObj?.message ||
           "Tidak dapat membaca QR Code dari foto. Pastikan posisi tegak, jelas, dan pencahayaan cukup.",
         time: new Date().toLocaleTimeString("id-ID"),
+        sessionName: selectedSessionObj?.name,
       });
     } finally {
       setIsProcessingScan(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualNim.trim()) return;
+    processQrCode(manualNim.trim());
+    setManualNim("");
   };
 
   // Efek Lifecycle Kamera Scanner (LiveQrScanner - jsQR)
@@ -514,6 +676,7 @@ export default function MentorDashboardPage() {
       }, 300);
     } else {
       // Hentikan scanner saat Bottom Sheet ditutup
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCameraError(null);
       if (liveScannerRef.current) {
         liveScannerRef.current.stop();
@@ -539,10 +702,6 @@ export default function MentorDashboardPage() {
     user?.mentored_groups && user.mentored_groups.length > 0
       ? user.mentored_groups.map((g) => g.group_name).join(", ")
       : "Belum Ditugaskan";
-
-  const selectedSessionObj = sessions.find((s) => s.id === selectedSessionId) || sessions[0];
-  const endSessionVal = selectedSessionObj?.endSessions || selectedSessionObj?.end_sessions;
-  const isSelectedSessionEnded = endSessionVal ? new Date() > new Date(endSessionVal) : false;
 
   return (
     <MobileShell
@@ -765,7 +924,12 @@ export default function MentorDashboardPage() {
 
         <button
           type="button"
-          onClick={() => setIsScannerOpen(true)}
+          onClick={() => {
+            if (activeSessions.length > 0 && !activeSessions.some((s) => s.id === selectedSessionId)) {
+              setSelectedSessionId(activeSessions[0].id);
+            }
+            setIsScannerOpen(true);
+          }}
           style={{
             width: "100%",
             padding: "12px",
@@ -961,7 +1125,12 @@ export default function MentorDashboardPage() {
 
       {/* 4. FAB SCANNER di Pojok Kanan Bawah */}
       <Fab
-        onClick={() => setIsScannerOpen(true)}
+        onClick={() => {
+          if (activeSessions.length > 0 && !activeSessions.some((s) => s.id === selectedSessionId)) {
+            setSelectedSessionId(activeSessions[0].id);
+          }
+          setIsScannerOpen(true);
+        }}
         icon={<QrCode size={22} />}
         label="Scan QR"
         ariaLabel="Buka Scanner QR Presensi"
@@ -969,71 +1138,125 @@ export default function MentorDashboardPage() {
         bottomOffset={84}
       />
 
-      {/* 5. Bottom Sheet: Kamera Scanner & Feedback Status Instan */}
+      {/* 5. Bottom Sheet: Kamera Scanner Presensi QR */}
       <BottomSheet
         isOpen={isScannerOpen}
         onClose={() => {
           setIsScannerOpen(false);
           setCameraError(null);
-          setScanResult(null);
         }}
-        title="Pemindai Presensi Cepat"
-        maxHeight="90vh"
+        title="Scanner QR Presensi"
+        maxHeight="92vh"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "4px 0 16px" }}>
-          {/* A. Dropdown Selector Sesi Aktif */}
-          <div>
-            <label
-              htmlFor="session-select"
-              style={{
-                display: "block",
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                color: "var(--lp-ocean-blue, #1F4B5D)",
-                marginBottom: "6px",
-              }}
-            >
-              Pilih Sesi Kegiatan:
-            </label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "4px 0 16px" }}>
+          {/* A. Dropdown Sesi Presensi Aktif & Kartu Detail Sesi */}
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              padding: "14px",
+              border: "1px solid rgba(31, 75, 93, 0.1)",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.02)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <label
+                htmlFor="session-select"
+                style={{
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  color: "#1F4B5D",
+                }}
+              >
+                Pilih Sesi Presensi Aktif:
+              </label>
+
+              {/* Badge Indikator Tipe Sesi */}
+              {selectedSessionObj && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    fontSize: "0.72rem",
+                    fontWeight: 800,
+                    padding: "3px 10px",
+                    borderRadius: "999px",
+                    backgroundColor: isProdiSession ? "rgba(124, 58, 237, 0.12)" : "rgba(14, 165, 233, 0.12)",
+                    color: isProdiSession ? "#6D28D9" : "#0369A1",
+                    border: `1px solid ${isProdiSession ? "rgba(124, 58, 237, 0.25)" : "rgba(14, 165, 233, 0.25)"}`,
+                  }}
+                >
+                  {isProdiSession ? <GraduationCap size={13} /> : <Users size={13} />}
+                  <span>{attendanceKeterangan}</span>
+                </span>
+              )}
+            </div>
+
             <select
               id="session-select"
               value={selectedSessionId || ""}
               onChange={(e) => {
-                const sId = Number(e.target.value);
+                const sId = e.target.value ? Number(e.target.value) : null;
                 setSelectedSessionId(sId);
-                setScanResult(null);
-                refreshAttendanceCounts(sId, groupMaba, mentoredGroupIds);
+                if (sId) {
+                  refreshAttendanceCounts(sId, groupMaba, mentoredGroupIds);
+                }
               }}
+              disabled={activeSessions.length === 0}
               style={{
                 width: "100%",
                 padding: "10px 12px",
-                borderRadius: "12px",
-                border: "1px solid rgba(31, 75, 93, 0.2)",
-                backgroundColor: "#FFFFFF",
+                borderRadius: "10px",
+                border: "1.5px solid rgba(31, 75, 93, 0.2)",
+                backgroundColor: activeSessions.length === 0 ? "#F1F5F9" : "#FAFAFA",
                 fontSize: "0.85rem",
                 fontWeight: 600,
                 color: "#1F1E19",
                 outline: "none",
+                cursor: activeSessions.length === 0 ? "not-allowed" : "pointer",
               }}
             >
-              {sessions.length === 0 ? (
-                <option value="">Tidak ada sesi tersedia</option>
+              {activeSessions.length === 0 ? (
+                <option value="">Tidak ada sesi aktif saat ini</option>
               ) : (
-                sessions.map((sess) => {
+                activeSessions.map((sess) => {
                   const startVal = sess.startSessions || sess.start_sessions;
+                  const timeFormatted = formatSessionTime(startVal);
                   return (
                     <option key={sess.id} value={sess.id}>
-                      {sess.is_active ? "🟢 [AKTIF SEKARANG] " : ""}{sess.name} ({formatSessionDate(startVal)}, {formatSessionTime(startVal)}) - Tol. {sess.toleransi}m
+                      {sess.name} ({timeFormatted})
                     </option>
                   );
                 })
               )}
             </select>
 
-            {(() => {
-              const cur = sessions.find((s) => s.id === selectedSessionId);
-              if (!cur) return null;
-              const startVal = cur.startSessions || cur.start_sessions;
+            {/* Alert jika tidak ada sesi aktif saat ini */}
+            {activeSessions.length === 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "10px",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(245, 158, 11, 0.1)",
+                  border: "1px solid rgba(245, 158, 11, 0.3)",
+                  color: "#B45309",
+                  fontSize: "0.78rem",
+                }}
+              >
+                <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                <span>Saat ini tidak ada sesi kegiatan yang aktif sesuai jadwal (WIB). Fitur presensi hanya dapat digunakan saat sesi berlangsung.</span>
+              </div>
+            )}
+
+            {/* Detail Kartu Sesi Terpilih (Menampilkan Waktu Selesai Presensi) */}
+            {selectedSessionObj && (() => {
+              const startVal = selectedSessionObj.startSessions || selectedSessionObj.start_sessions;
+              const endVal = selectedSessionObj.endSessions || selectedSessionObj.end_sessions;
               return (
                 <div
                   style={{
@@ -1041,300 +1264,412 @@ export default function MentorDashboardPage() {
                     flexWrap: "wrap",
                     alignItems: "center",
                     gap: "10px",
-                    marginTop: "8px",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
+                    marginTop: "12px",
+                    padding: "10px 12px",
+                    borderRadius: "12px",
                     backgroundColor: "rgba(31, 75, 93, 0.05)",
-                    border: "1px solid rgba(31, 75, 93, 0.1)",
-                    fontSize: "0.75rem",
+                    border: "1px solid rgba(31, 75, 93, 0.12)",
+                    fontSize: "0.78rem",
                     color: "#1F4B5D",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <Calendar size={13} color="#1F4B5D" />
-                    <span>Tanggal: <strong>{formatSessionDate(startVal)}</strong></span>
+                    <span>
+                      Tanggal: <strong>{formatSessionDate(startVal)}</strong>
+                    </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <Clock size={13} color="#1F4B5D" />
-                    <span>Waktu Mulai: <strong>{formatSessionTime(startVal)}</strong></span>
+                    <span>
+                      Waktu Mulai: <strong>{formatSessionTime(startVal)}</strong>
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <Clock size={13} color="#1F4B5D" />
+                    <span>
+                      Waktu Selesai: <strong>{formatSessionTime(endVal)}</strong>
+                    </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <Shield size={13} color="#0F766E" />
-                    <span>Toleransi: <strong>{cur.toleransi ?? 0} mnt</strong></span>
+                    <span>
+                      Toleransi: <strong>{selectedSessionObj.toleransi ?? 0} menit</strong>
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      backgroundColor: isProdiSession ? "rgba(124, 58, 237, 0.12)" : "rgba(14, 165, 233, 0.12)",
+                      color: isProdiSession ? "#6D28D9" : "#0369A1",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {isProdiSession ? <GraduationCap size={12} /> : <Users size={12} />}
+                    <span>
+                      Keterangan: <strong>{attendanceKeterangan}</strong>
+                    </span>
                   </div>
                 </div>
               );
             })()}
           </div>
 
-          {/* B. Area View Kamera Scanner atau Permintaan Izin Akses */}
+          {/* B. Banner Kewenangan Mentor */}
           <div
             style={{
-              position: "relative",
-              width: "100%",
-              borderRadius: "16px",
-              overflow: "hidden",
-              backgroundColor: "#11110E",
-              minHeight: "280px",
-              border: "2px solid rgba(31, 75, 93, 0.2)",
-              marginBottom: "12px",
+              backgroundColor: isProdiSession ? "rgba(124, 58, 237, 0.08)" : "rgba(15, 118, 110, 0.08)",
+              border: `1px solid ${isProdiSession ? "rgba(124, 58, 237, 0.2)" : "rgba(15, 118, 110, 0.2)"}`,
+              borderRadius: "14px",
+              padding: "10px 14px",
+              fontSize: "0.78rem",
+              color: "#1F1E19",
             }}
           >
-            {/* Video element untuk LiveQrScanner (jsQR) */}
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              autoPlay
-              style={{
-                width: "100%",
-                height: "100%",
-                minHeight: "280px",
-                objectFit: "cover",
-                display: "block",
-              }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, marginBottom: "3px" }}>
+              {isProdiSession ? <GraduationCap size={15} color="#7C3AED" /> : <Users size={15} color="#0F766E" />}
+              <span style={{ color: isProdiSession ? "#6D28D9" : "#0F766E" }}>
+                {isProdiSession ? "Kewenangan Presensi Prodi" : "Kewenangan Presensi Kelompok"}
+              </span>
+            </div>
+            <div style={{ fontSize: "0.74rem", color: "rgba(31, 75, 93, 0.85)", lineHeight: 1.4 }}>
+              {isProdiSession ? (
+                <span>
+                  Sesi ini adalah presensi prodi. Anda hanya berhak memindai mahasiswa prodi binaan:{" "}
+                  <strong>{mentorAllowedProdis.join(", ") || user?.prodi || "Prodi Anda"}</strong>.
+                </span>
+              ) : (
+                <span>
+                  Sesi ini adalah presensi kelompok. Anda hanya berhak memindai mahasiswa kelompok binaan:{" "}
+                  <strong>{mentoredGroupNames}</strong>.
+                </span>
+              )}
+            </div>
+          </div>
 
-            {/* Animasi Guide Reticle ketika scanner aktif */}
-            {scannerActive && !isProcessingScan && (
-              <div
+          {/* C. Viewfinder Scanner QR Code */}
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "18px",
+              padding: "14px",
+              border: "1px solid rgba(31, 75, 93, 0.12)",
+              boxShadow: "0 4px 16px rgba(31, 75, 93, 0.04)",
+            }}
+          >
+            {/* Header Kamera Bar (Kamera Aktif & Input Manual Switcher) */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: scannerActive ? "#10B981" : (cameraError ? "#EF4444" : "#F59E0B"),
+                    display: "inline-block",
+                    boxShadow: scannerActive ? "0 0 8px #10B981" : "none",
+                  }}
+                />
+                <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "#1F4B5D" }}>
+                  {scannerActive ? "Kamera Scanner Aktif" : (cameraError ? "Kamera Terkendala" : "Menghubungkan Kamera...")}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowManualInput(!showManualInput)}
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  pointerEvents: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 4,
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(31, 75, 93, 0.2)",
+                  backgroundColor: "#FFFFFF",
+                  color: "#1F4B5D",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
                 }}
               >
-                <div
+                {showManualInput ? "Tutup Manual NIM" : "Input Manual NIM"}
+              </button>
+            </div>
+
+            {/* Input Manual NIM Form */}
+            {showManualInput && (
+              <form
+                onSubmit={handleManualSubmit}
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  marginBottom: "12px",
+                  backgroundColor: "rgba(31, 75, 93, 0.05)",
+                  padding: "10px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(31, 75, 93, 0.12)",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Masukkan NIM Mahasiswa..."
+                  value={manualNim}
+                  onChange={(e) => setManualNim(e.target.value)}
                   style={{
-                    width: "210px",
-                    height: "210px",
-                    border: "2px solid rgba(104, 207, 235, 0.7)",
-                    borderRadius: "16px",
-                    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.32)",
-                    position: "relative",
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(31, 75, 93, 0.2)",
+                    fontSize: "0.82rem",
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isProcessingScan || !manualNim.trim()}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    backgroundColor: "#1F4B5D",
+                    color: "#FFFFFF",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    border: "none",
+                    cursor: "pointer",
+                    opacity: isProcessingScan || !manualNim.trim() ? 0.6 : 1,
                   }}
                 >
-                  <span style={{ position: "absolute", top: "-2px", left: "-2px", width: "22px", height: "22px", borderTop: "4px solid #68CFEB", borderLeft: "4px solid #68CFEB", borderTopLeftRadius: "12px" }} />
-                  <span style={{ position: "absolute", top: "-2px", right: "-2px", width: "22px", height: "22px", borderTop: "4px solid #68CFEB", borderRight: "4px solid #68CFEB", borderTopRightRadius: "12px" }} />
-                  <span style={{ position: "absolute", bottom: "-2px", left: "-2px", width: "22px", height: "22px", borderBottom: "4px solid #68CFEB", borderLeft: "4px solid #68CFEB", borderBottomLeftRadius: "12px" }} />
-                  <span style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderBottom: "4px solid #68CFEB", borderRight: "4px solid #68CFEB", borderBottomRightRadius: "12px" }} />
-                </div>
-              </div>
+                  Presensi
+                </button>
+              </form>
             )}
 
-            {/* Jika kamera belum aktif atau ada error izin */}
-            {!scannerActive && (
-              <div
+            {/* Viewfinder Video Kamera */}
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                minHeight: "300px",
+                backgroundColor: "#000000",
+                borderRadius: "16px",
+                overflow: "hidden",
+                marginBottom: "10px",
+              }}
+            >
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                autoPlay
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundColor: "#FFFFFF",
-                  padding: "20px 16px",
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "12px",
-                  zIndex: 6,
+                  width: "100%",
+                  height: "100%",
+                  minHeight: "300px",
+                  objectFit: "cover",
+                  display: "block",
                 }}
-              >
+              />
+
+              {/* Animasi Reticle Frame Laser saat scanner aktif */}
+              {scannerActive && !isProcessingScan && (
                 <div
                   style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "50%",
-                    backgroundColor: cameraError ? "rgba(239, 68, 68, 0.1)" : "rgba(31, 75, 93, 0.08)",
+                    position: "absolute",
+                    inset: 0,
+                    pointerEvents: "none",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: cameraError ? "#EF4444" : "#1F4B5D",
-                    boxShadow: cameraError ? "0 0 0 6px rgba(239, 68, 68, 0.15)" : "0 0 0 6px rgba(104, 207, 235, 0.15)",
+                    zIndex: 4,
                   }}
                 >
-                  {cameraError ? <AlertTriangle size={26} /> : <Camera size={26} />}
-                </div>
-
-                <div>
-                  <h4 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#1F1E19", margin: "0 0 4px 0" }}>
-                    {cameraError ? "Izin Kamera Terkendala" : "Menghubungkan Kamera HP..."}
-                  </h4>
-                  <p style={{ fontSize: "0.78rem", color: "rgba(31, 75, 93, 0.75)", lineHeight: 1.45, margin: 0, maxWidth: "280px" }}>
-                    {cameraError || "Browser sedang meminta izin untuk mengakses kamera ponsel Anda. Harap ketuk 'Izinkan' (Allow) pada pop-up di layar."}
-                  </p>
-                </div>
-
-                {/* Tombol Minta Izin Ulang & Foto Langsung */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", maxWidth: "300px" }}>
-                  <button
-                    type="button"
-                    onClick={startCamera}
+                  <div
                     style={{
-                      width: "100%",
-                      padding: "12px",
-                      borderRadius: "12px",
-                      backgroundColor: "#1F4B5D",
-                      color: "#FFFFFF",
-                      border: "none",
-                      fontWeight: 800,
-                      fontSize: "0.85rem",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      boxShadow: "0 4px 12px rgba(31, 75, 93, 0.2)",
+                      width: "220px",
+                      height: "220px",
+                      border: "2px solid rgba(104, 207, 235, 0.7)",
+                      borderRadius: "16px",
+                      boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.32)",
+                      position: "relative",
                     }}
                   >
-                    <RefreshCw size={16} />
-                    <span>Minta Izin & Aktifkan Kamera</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      borderRadius: "12px",
-                      backgroundColor: "#0284C7",
-                      color: "#FFFFFF",
-                      border: "none",
-                      fontWeight: 800,
-                      fontSize: "0.85rem",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      boxShadow: "0 4px 12px rgba(2, 132, 199, 0.2)",
-                    }}
-                  >
-                    <Camera size={16} />
-                    <span>📸 Ambil Foto QR (Kamera HP Langsung)</span>
-                  </button>
+                    <span style={{ position: "absolute", top: "-2px", left: "-2px", width: "24px", height: "24px", borderTop: "4px solid #68CFEB", borderLeft: "4px solid #68CFEB", borderTopLeftRadius: "12px" }} />
+                    <span style={{ position: "absolute", top: "-2px", right: "-2px", width: "24px", height: "24px", borderTop: "4px solid #68CFEB", borderRight: "4px solid #68CFEB", borderTopRightRadius: "12px" }} />
+                    <span style={{ position: "absolute", bottom: "-2px", left: "-2px", width: "24px", height: "24px", borderBottom: "4px solid #68CFEB", borderLeft: "4px solid #68CFEB", borderBottomLeftRadius: "12px" }} />
+                    <span style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "24px", height: "24px", borderBottom: "4px solid #68CFEB", borderRight: "4px solid #68CFEB", borderBottomRightRadius: "12px" }} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Overlay Loader jika sedang memproses scan */}
-            {isProcessingScan && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundColor: "rgba(0, 0, 0, 0.65)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#68CFEB",
-                  gap: "8px",
-                  zIndex: 20,
-                }}
-              >
-                <RefreshCw size={28} className="animate-spin" />
-                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF" }}>
-                  Memverifikasi QR Maba...
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Hidden File Input untuk Ambil Foto Langsung */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style={{ display: "none" }}
-            onChange={handleFileScan}
-          />
-
-          {/* C. Tampilan Status Instan di Bawah Scanner (Tanpa Menutup Lembar) */}
-          {scanResult && (
-            <div
-              style={{
-                padding: "14px",
-                borderRadius: "14px",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "10px",
-                backgroundColor:
-                  scanResult.type === "success"
-                    ? "rgba(16, 185, 129, 0.12)"
-                    : scanResult.type === "warning"
-                    ? "rgba(245, 158, 11, 0.12)"
-                    : scanResult.type === "info"
-                    ? "rgba(104, 207, 235, 0.18)"
-                    : "rgba(239, 68, 68, 0.12)",
-                border: `1px solid ${
-                  scanResult.type === "success"
-                    ? "#10B981"
-                    : scanResult.type === "warning"
-                    ? "#F59E0B"
-                    : scanResult.type === "info"
-                    ? "#38BDF8"
-                    : "#EF4444"
-                }`,
-                animation: "slideUp 200ms ease",
-              }}
-            >
-              <div style={{ flexShrink: 0, marginTop: "2px" }}>
-                {scanResult.type === "success" && <CheckCircle2 size={22} color="#059669" />}
-                {scanResult.type === "warning" && <AlertTriangle size={22} color="#D97706" />}
-                {scanResult.type === "info" && <CheckCircle2 size={22} color="#0284C7" />}
-                {scanResult.type === "error" && <XCircle size={22} color="#DC2626" />}
-              </div>
-
-              <div style={{ flex: 1 }}>
+              {/* Layar Fallback jika kamera belum menyala / terkendala izin */}
+              {!scannerActive && (
                 <div
                   style={{
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    color:
-                      scanResult.type === "success"
-                        ? "#065F46"
-                        : scanResult.type === "warning"
-                        ? "#92400E"
-                        : scanResult.type === "info"
-                        ? "#0369A1"
-                        : "#991B1B",
-                    marginBottom: "2px",
+                    position: "absolute",
+                    inset: 0,
+                    backgroundColor: "#FFFFFF",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "20px 16px",
+                    textAlign: "center",
+                    zIndex: 6,
                   }}
                 >
-                  {scanResult.title}
-                </div>
-
-                {scanResult.mabaNama && (
-                  <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#1F1E19" }}>
-                    👤 {scanResult.mabaNama}
+                  <div
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "50%",
+                      backgroundColor: cameraError ? "rgba(239, 68, 68, 0.08)" : "rgba(31, 75, 93, 0.08)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 12px",
+                      boxShadow: cameraError ? "0 0 0 6px rgba(239, 68, 68, 0.15)" : "0 0 0 6px rgba(104, 207, 235, 0.15)",
+                    }}
+                  >
+                    {cameraError ? <AlertTriangle size={28} color="#EF4444" /> : <Camera size={28} color="#1F4B5D" />}
                   </div>
-                )}
 
-                <div style={{ fontSize: "0.75rem", opacity: 0.85, marginTop: "2px" }}>
-                  {scanResult.message} {scanResult.time && `• ${scanResult.time}`}
+                  <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "#1F1E19", margin: "0 0 6px 0" }}>
+                    {cameraError ? "Izin Kamera Terkendala" : "Menghubungkan Kamera HP..."}
+                  </h3>
+
+                  <p style={{ fontSize: "0.78rem", lineHeight: 1.45, color: "rgba(31, 75, 93, 0.8)", margin: "0 0 16px 0", maxWidth: "290px" }}>
+                    {cameraError || "Browser sedang mengaktifkan scanner kamera. Harap ketuk 'Izinkan' (Allow) jika muncul permintaan izin kamera pada browser."}
+                  </p>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", maxWidth: "300px" }}>
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        padding: "12px",
+                        borderRadius: "12px",
+                        backgroundColor: "#1F4B5D",
+                        color: "#FFFFFF",
+                        fontWeight: 800,
+                        fontSize: "0.85rem",
+                        border: "none",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 14px rgba(31, 75, 93, 0.2)",
+                      }}
+                    >
+                      <RefreshCw size={16} />
+                      <span>Minta Izin & Aktifkan Kamera</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        padding: "12px",
+                        borderRadius: "12px",
+                        backgroundColor: "#0284C7",
+                        color: "#FFFFFF",
+                        fontWeight: 800,
+                        fontSize: "0.85rem",
+                        border: "none",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 14px rgba(2, 132, 199, 0.2)",
+                      }}
+                    >
+                      <Camera size={16} />
+                      <span>📸 Ambil Foto QR (Kamera HP Langsung)</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          <p
-            style={{
-              fontSize: "0.75rem",
-              color: "rgba(31, 75, 93, 0.6)",
-              textAlign: "center",
-              margin: "4px 0 0 0",
-            }}
-          >
-            Kamera otomatis tetap menyala untuk melanjutkan scan maba berikutnya.
-          </p>
+              {/* Overlay Loader jika sedang memverifikasi scan */}
+              {isProcessingScan && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#68CFEB",
+                    gap: "10px",
+                    zIndex: 20,
+                  }}
+                >
+                  <RefreshCw size={32} className="animate-spin" />
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF" }}>
+                    Memverifikasi QR Maba...
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden File Input untuk Ambil Foto Langsung */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={handleFileScan}
+            />
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  color: "rgba(31, 75, 93, 0.7)",
+                  margin: 0,
+                  flex: 1,
+                }}
+              >
+                Arahkan kamera ke QR Code maba. Hasil presensi akan langsung muncul di pop-up layar.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(2, 132, 199, 0.1)",
+                  color: "#0284C7",
+                  border: "1px solid rgba(2, 132, 199, 0.2)",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Camera size={13} />
+                <span>Foto Kamera HP</span>
+              </button>
+            </div>
+          </div>
         </div>
       </BottomSheet>
+
+      {/* 6. Modal Pop-Up Hasil Presensi Instan (Bebas Scroll & Auto-Resume) */}
+      <ScanResultModal
+        isOpen={isResultModalOpen}
+        onClose={handleCloseResultModal}
+        data={modalResultData}
+        autoCloseSeconds={4}
+      />
 
       {/* ======================================================== */}
       {/* 📋 MODAL DETAIL DAFTAR PRESENSI MAHASISWA BINAAN         */}
@@ -1553,8 +1888,9 @@ export default function MentorDashboardPage() {
 
                   return filteredHadir.map((item, idx) => {
                     const isLate = item.status === "Terlambat";
-                    const scanTimeStr = item.scannedAt || item.createdAt
-                      ? new Date(item.scannedAt || item.createdAt).toLocaleTimeString("id-ID", {
+                    const timeVal = item.scannedAt || item.createdAt;
+                    const scanTimeStr = timeVal
+                      ? new Date(timeVal).toLocaleTimeString("id-ID", {
                           hour: "2-digit",
                           minute: "2-digit",
                         }) + " WIB"
@@ -1747,6 +2083,9 @@ export default function MentorDashboardPage() {
                 type="button"
                 onClick={() => {
                   setIsAttendanceModalOpen(false);
+                  if (activeSessions.length > 0 && !activeSessions.some((s) => s.id === selectedSessionId)) {
+                    setSelectedSessionId(activeSessions[0].id);
+                  }
                   setIsScannerOpen(true);
                 }}
                 style={{
