@@ -38,7 +38,13 @@ export default function Navbar() {
     let isMounted = true;
     async function checkUserSession() {
       try {
-        const res = await fetch("/api/auth/me");
+        const res = await fetch("/api/auth/me", {
+          cache: "no-store",
+          credentials: "include",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.user && isMounted) {
@@ -54,8 +60,20 @@ export default function Navbar() {
       }
     }
     checkUserSession();
+
+    // Re-check otomatis ketika window/tab kembali aktif
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        checkUserSession();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
     return () => {
       isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
     };
   }, [pathname]);
 
@@ -67,9 +85,18 @@ export default function Navbar() {
     return "/login";
   };
 
-  const getShortUsername = (username?: string) => {
-    if (!username) return "Akun";
-    return username.length > 12 ? `${username.slice(0, 10)}..` : username;
+  const getDisplayName = (user?: { username?: string; nama?: string } | null) => {
+    if (!user) return "Akun";
+    const cleanName = (user.nama || "").trim();
+    if (cleanName) {
+      const firstName = cleanName.split(" ")[0];
+      return firstName.length > 12 ? `${firstName.slice(0, 10)}..` : firstName;
+    }
+    const cleanUsername = (user.username || "").trim();
+    if (cleanUsername) {
+      return cleanUsername.length > 12 ? `${cleanUsername.slice(0, 10)}..` : cleanUsername;
+    }
+    return "Akun";
   };
 
   const isActive = (path: string) => {
@@ -194,7 +221,7 @@ export default function Navbar() {
             >
               <User size={16} className={styles.userIcon} />
               <span className={styles.usernameText}>
-                {getShortUsername(currentUser.username)}
+                {getDisplayName(currentUser)}
               </span>
             </Link>
           ) : (
@@ -301,7 +328,7 @@ export default function Navbar() {
               >
                 <User size={19} />
                 <span>
-                  {getShortUsername(currentUser.username)} &bull; Dashboard
+                  {getDisplayName(currentUser)} &bull; Dashboard
                 </span>
               </Link>
             ) : (

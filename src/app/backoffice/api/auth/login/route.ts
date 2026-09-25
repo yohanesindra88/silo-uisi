@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // Simpan token dalam HttpOnly cookie
+    // Simpan token dalam HttpOnly cookie (1 hari)
     response.cookies.set({
       name: AUTH_COOKIE_NAME,
       value: token,

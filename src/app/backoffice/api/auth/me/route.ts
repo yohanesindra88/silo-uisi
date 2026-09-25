@@ -3,6 +3,9 @@ import { prisma } from "@/utils/prisma";
 import { verifyJwt, AUTH_COOKIE_NAME } from "@/utils/auth";
 import bcrypt from "bcryptjs";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     // Ambil token dari HttpOnly Cookie atau Authorization Header
@@ -70,6 +73,12 @@ export async function GET(req: NextRequest) {
           group_id: gm.mGroupsId,
           group_name: gm.group.name,
         })),
+      },
+    }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       },
     });
   } catch (error) {
