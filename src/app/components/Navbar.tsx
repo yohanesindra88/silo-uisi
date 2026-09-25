@@ -86,17 +86,9 @@ export default function Navbar() {
   };
 
   const getDisplayName = (user?: { username?: string; nama?: string } | null) => {
-    if (!user) return "Akun";
-    const cleanName = (user.nama || "").trim();
-    if (cleanName) {
-      const firstName = cleanName.split(" ")[0];
-      return firstName.length > 12 ? `${firstName.slice(0, 10)}..` : firstName;
-    }
-    const cleanUsername = (user.username || "").trim();
-    if (cleanUsername) {
-      return cleanUsername.length > 12 ? `${cleanUsername.slice(0, 10)}..` : cleanUsername;
-    }
-    return "Akun";
+    if (!user || !user.username) return "Akun";
+    const cleanUsername = user.username.trim();
+    return cleanUsername.length > 12 ? `${cleanUsername.slice(0, 10)}..` : cleanUsername;
   };
 
   const isActive = (path: string) => {
