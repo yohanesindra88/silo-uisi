@@ -172,16 +172,20 @@ async function main(): Promise<void> {
     }
 
     const buf = await fs.readFile(src.abs);
-    const variants = await renderVariants(buf, outDir, path.basename(base));
-    rendered += 1;
-    variantBytes += variants.reduce((a, v) => a + v.bytes, 0);
-    manifest[src.rel] = variants.map((v) => ({
-      bucket: v.bucket,
-      url: `/${VARIANT_DIR_NAME}/${path.dirname(base)}/${v.file}`.replace("/./", "/"),
-      width: v.width,
-      height: v.height,
-      bytes: v.bytes,
-    }));
+    try {
+      const variants = await renderVariants(buf, outDir, path.basename(base));
+      rendered += 1;
+      variantBytes += variants.reduce((a, v) => a + v.bytes, 0);
+      manifest[src.rel] = variants.map((v) => ({
+        bucket: v.bucket,
+        url: `/${VARIANT_DIR_NAME}/${path.dirname(base)}/${v.file}`.replace("/./", "/"),
+        width: v.width,
+        height: v.height,
+        bytes: v.bytes,
+      }));
+    } catch (err) {
+      throw new Error(`Gagal memproses "${src.rel}": ${err instanceof Error ? err.message : err}`);
+    }
   }
 
   if (CHECK_MODE) {
