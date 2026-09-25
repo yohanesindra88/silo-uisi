@@ -40,6 +40,7 @@ export default function PenugasanPage() {
           id="kebutuhan-acara"
           className={styles.section}
           data-aos="fade-up"
+          suppressHydrationWarning
         >
           <h2 className={styles.sectionTitle}>Kebutuhan SILO UISI 2026</h2>
           <p className={styles.sectionSubtitle}>

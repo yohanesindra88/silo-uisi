@@ -351,7 +351,7 @@ export default function GlobeSection() {
     setActiveIdx((i) => (i - 1 + CLUSTERS.length) % CLUSTERS.length);
 
   return (
-    <section id="kelompok" className={styles.section} data-aos="fade-up">
+    <section id="kelompok" className={styles.section} data-aos="fade-up" suppressHydrationWarning>
       <h2
         style={{
           fontSize: "2.25rem",

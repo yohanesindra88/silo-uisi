@@ -75,8 +75,9 @@ export default function Footer() {
           type="email"
           placeholder="Email kamu..."
           className={styles.footerInput}
+          suppressHydrationWarning
         />
-        <button className={styles.footerButton}>
+        <button className={styles.footerButton} type="button" suppressHydrationWarning>
           <span
             style={{
               display: "inline-flex",

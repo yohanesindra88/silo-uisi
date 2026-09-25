@@ -14,7 +14,7 @@ export default function MapsSection() {
   const googleMapsUrl = "https://maps.app.goo.gl/Em8jmhah1ujrv3D89";
 
   return (
-    <section id="lokasi" className={styles.section} data-aos="fade-up">
+    <section id="lokasi" className={styles.section} data-aos="fade-up" suppressHydrationWarning>
       {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>

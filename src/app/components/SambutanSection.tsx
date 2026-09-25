@@ -60,7 +60,7 @@ const SAMBUTAN_DATA: SambutanItem[] = [
 
 export default function SambutanSection() {
   return (
-    <section id="sambutan" className={styles.section} data-aos="fade-up">
+    <section id="sambutan" className={styles.section} data-aos="fade-up" suppressHydrationWarning>
       {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>

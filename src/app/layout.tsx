@@ -31,12 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" data-scroll-behavior="smooth" translate="no" className="notranslate" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/logo_aethera.png?v=99" type="image/png" sizes="any" />
-        <link rel="shortcut icon" href="/logo_aethera.png?v=99" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
-      </head>
+    <html lang="id" translate="no" className="notranslate" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <AosInit />
         {children}

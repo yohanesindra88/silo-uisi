@@ -210,6 +210,7 @@ export default function Navbar() {
               href={getDashboardUrl(currentUser.role)}
               className={`${styles.loginBtn} ${styles.userActiveBtn}`}
               title={`Akun: ${currentUser.nama} (@${currentUser.username}) - Buka Dashboard`}
+              suppressHydrationWarning
             >
               <User size={16} className={styles.userIcon} />
               <span className={styles.usernameText}>
@@ -220,6 +221,7 @@ export default function Navbar() {
             <Link
               href="/login"
               className={`${styles.loginBtn} ${isActive("/login") ? styles.activeLoginBtn : ""}`}
+              suppressHydrationWarning
             >
               <LogIn size={16} />
               <span>Masuk</span>
@@ -310,13 +312,14 @@ export default function Navbar() {
           </div>
 
           {/* Tombol Login / Dashboard Mobile */}
-          <div className={styles.mobileLoginWrapper}>
+          <div className={styles.mobileLoginWrapper} suppressHydrationWarning>
             {currentUser ? (
               <Link
                 href={getDashboardUrl(currentUser.role)}
                 className={`${styles.mobileLoginBtn} ${styles.mobileUserActiveBtn}`}
                 onClick={() => setMobileMenuOpen(false)}
                 title={`Dashboard ${currentUser.nama}`}
+                suppressHydrationWarning
               >
                 <User size={19} />
                 <span>
@@ -328,6 +331,7 @@ export default function Navbar() {
                 href="/login"
                 className={styles.mobileLoginBtn}
                 onClick={() => setMobileMenuOpen(false)}
+                suppressHydrationWarning
               >
                 <LogIn size={19} />
                 <span>Masuk ke Akun</span>

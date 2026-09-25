@@ -113,6 +113,7 @@ export default function MerchCarousel() {
               <div
                 key={item.id}
                 className={`${styles.card} ${isCenter ? styles.cardCenter : ""}`}
+                suppressHydrationWarning
                 style={{
                   position: "absolute",
                   top: "50%",
