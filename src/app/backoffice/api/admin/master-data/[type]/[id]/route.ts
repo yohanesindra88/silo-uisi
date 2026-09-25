@@ -113,18 +113,64 @@ export async function PUT(
         }
       }
 
-      const updated = await prisma.user.update({
-        where: { id: numericId },
-        data: {
-          nama: newNama,
-          nim: newNim,
-          username: newUsername,
-          role: newRole,
-          fakultas: newFakultas,
-          prodi: newProdi,
-          mGroupsId,
+      const updated = await prisma.$transaction(
+        async (tx) => {
+          const userRec = await tx.user.update({
+            where: { id: numericId },
+            data: {
+              nama: newNama,
+              nim: newNim,
+              username: newUsername,
+              role: newRole,
+              fakultas: newFakultas,
+              prodi: newProdi,
+              mGroupsId,
+            },
+          });
+
+          // Sinkronisasi tabel pivot groups_mentors jika perannya adalah mentor
+          if (newRole === "mentor") {
+            if (mGroupsId) {
+              // Hapus keterikatan dengan kelompok lama agar mentor tidak dobel atau salah negara
+              await tx.groupMentor.deleteMany({
+                where: {
+                  mUsersId: numericId,
+                  mGroupsId: { not: mGroupsId },
+                },
+              });
+
+              await tx.groupMentor.upsert({
+                where: {
+                  mGroupsId_mUsersId: {
+                    mGroupsId,
+                    mUsersId: numericId,
+                  },
+                },
+                create: {
+                  mGroupsId,
+                  mUsersId: numericId,
+                },
+                update: {
+                  deletedAt: null,
+                },
+              });
+            } else {
+              // Jika kelompok dihapus, lepas dari seluruh kelompok
+              await tx.groupMentor.deleteMany({
+                where: { mUsersId: numericId },
+              });
+            }
+          } else {
+            // Jika role diubah menjadi non-mentor, bersihkan relasi mentor
+            await tx.groupMentor.deleteMany({
+              where: { mUsersId: numericId },
+            });
+          }
+
+          return userRec;
         },
-      });
+        { maxWait: 10000, timeout: 30000 }
+      );
 
       const safeUser = { ...updated };
       delete (safeUser as { password?: string }).password;

@@ -521,53 +521,63 @@ export class ImportController {
       throw new Error("Tidak ada data kelompok valid untuk diimpor.");
     }
 
-    return prisma.$transaction(async (tx) => {
-      let createdCount = 0;
-      let updatedCount = 0;
+    return prisma.$transaction(
+      async (tx) => {
+        let createdCount = 0;
+        let updatedCount = 0;
 
-      for (const item of groups) {
-        const name = item.nama_kelompok.trim();
-        if (!name) continue;
-
-        const description = item.deskripsi ? item.deskripsi.trim() : null;
-
-        const existing = await tx.group.findFirst({
-          where: { name },
+        const cleanNames = groups.map((g) => g.nama_kelompok.trim()).filter(Boolean);
+        const existingGroups = await tx.group.findMany({
+          where: { name: { in: cleanNames } },
         });
+        const existingMap = new Map(existingGroups.map((g) => [g.name.toLowerCase().trim(), g]));
 
-        if (existing) {
-          await tx.group.update({
-            where: { id: existing.id },
-            data: {
-              description: description || existing.description,
-              deletedAt: null,
-            },
-          });
-          updatedCount++;
-        } else {
-          await tx.group.create({
-            data: {
-              name,
-              description,
-            },
-          });
-          createdCount++;
+        for (const item of groups) {
+          const name = item.nama_kelompok.trim();
+          if (!name) continue;
+
+          const description = item.deskripsi ? item.deskripsi.trim() : null;
+          const existing = existingMap.get(name.toLowerCase());
+
+          if (existing) {
+            await tx.group.update({
+              where: { id: existing.id },
+              data: {
+                description: description || existing.description,
+                deletedAt: null,
+              },
+            });
+            updatedCount++;
+          } else {
+            const created = await tx.group.create({
+              data: {
+                name,
+                description,
+              },
+            });
+            existingMap.set(name.toLowerCase(), created);
+            createdCount++;
+          }
         }
-      }
 
-      return {
-        success: true,
-        total: groups.length,
-        createdCount,
-        updatedCount,
-      };
-    });
+        return {
+          success: true,
+          total: groups.length,
+          createdCount,
+          updatedCount,
+        };
+      },
+      {
+        maxWait: 15000,
+        timeout: 60000,
+      }
+    );
   }
 
   /**
    * Eksekusi import pengguna dengan:
    * 1. Auto-generate password 6 digit (3 angka + 3 huruf) unik jika password tidak diisi.
-   * 2. Hash bcrypt password sebelum disimpan ke database.
+   * 2. Hash bcrypt password sebelum disimpan ke database (dilakukan di luar transaksi DB agar tidak timeout).
    * 3. Auto-generate qr_token unik untuk maba.
    * 4. Auto-create kelompok jika belum terdaftar.
    * 5. Auto-assign mentor ke tabel pivot groups_mentors.
@@ -578,151 +588,232 @@ export class ImportController {
       throw new Error("Tidak ada data pengguna valid untuk diimpor.");
     }
 
-    return prisma.$transaction(async (tx) => {
-      // 1. Cache atau siapkan lookup kelompok yang ada
-      const allGroups = await tx.group.findMany({ where: { deletedAt: null } });
-      const groupMap = new Map<string, number>();
-      for (const g of allGroups) {
-        groupMap.set(g.name.toLowerCase().trim(), g.id);
+    // 1. Pra-proses in-memory di luar transaksi database (CPU-intensive: bcrypt & token)
+    // Menghitung hash bcrypt di luar transaksi mencegah terlampauinya batas timeout Prisma (5000ms).
+    const usedPasswords = new Set<string>();
+
+    interface PreparedUser {
+      nama: string;
+      username: string;
+      nim: string | null;
+      role: string;
+      fakultas: string | null;
+      prodi: string | null;
+      groupName: string | null;
+      plainPassword: string;
+      hashedPassword: string;
+      qrToken: string | null;
+    }
+
+    const preparedUsers: PreparedUser[] = [];
+
+    for (const row of users) {
+      const nama = row.nama?.trim();
+      const username = row.username?.trim();
+      const nim = row.nim ? row.nim.trim() : null;
+      const role = (row.role || "maba").trim().toLowerCase();
+      const fakultas = row.fakultas ? row.fakultas.trim() : null;
+      const prodi = row.prodi ? row.prodi.trim() : null;
+      const groupName = row.nama_kelompok ? row.nama_kelompok.trim() : null;
+
+      if (!nama || !username) continue;
+
+      // Tentukan password plain: gunakan password_default jika ada, atau generate 6 digit unik
+      let plainPassword = row.password_default ? row.password_default.trim() : "";
+      if (!plainPassword) {
+        plainPassword = generateUniqueUserPassword(usedPasswords);
       }
 
-      const usedPasswords = new Set<string>();
-      const createdCredentials: CreatedUserCredential[] = [];
+      // Hash password bcrypt dilakukan di luar transaksi
+      const hashedPassword = await hashPassword(plainPassword);
 
-      let createdCount = 0;
-      let updatedCount = 0;
-      let newGroupsCreated = 0;
+      // Auto-generate QR Token khusus role maba
+      let qrToken: string | null = null;
+      if (role === "maba") {
+        qrToken = generateMabaQrToken(nim, username);
+      }
 
-      for (const row of users) {
-        const nama = row.nama.trim();
-        const username = row.username.trim();
-        const nim = row.nim ? row.nim.trim() : null;
-        const role = (row.role || "maba").trim().toLowerCase();
-        const fakultas = row.fakultas ? row.fakultas.trim() : null;
-        const prodi = row.prodi ? row.prodi.trim() : null;
-        const groupName = row.nama_kelompok ? row.nama_kelompok.trim() : null;
+      preparedUsers.push({
+        nama,
+        username,
+        nim,
+        role,
+        fakultas,
+        prodi,
+        groupName,
+        plainPassword,
+        hashedPassword,
+        qrToken,
+      });
+    }
 
-        if (!nama || !username) continue;
+    if (preparedUsers.length === 0) {
+      throw new Error("Tidak ada data pengguna valid untuk diimpor.");
+    }
 
-        // Auto-resolve atau buat kelompok jika nama_kelompok diisi
-        let mGroupsId: number | null = null;
-        if (groupName) {
-          const lowerGroupName = groupName.toLowerCase();
-          if (groupMap.has(lowerGroupName)) {
-            mGroupsId = groupMap.get(lowerGroupName)!;
-          } else {
-            // Buat kelompok baru otomatis
-            const newGroup = await tx.group.create({
+    // 2. Eksekusi database di dalam transaksi dengan timeout yang dinaikkan (60s) dan bulk prefetch
+    return prisma.$transaction(
+      async (tx) => {
+        // Cache atau siapkan lookup kelompok yang ada
+        const allGroups = await tx.group.findMany({ where: { deletedAt: null } });
+        const groupMap = new Map<string, number>();
+        for (const g of allGroups) {
+          groupMap.set(g.name.toLowerCase().trim(), g.id);
+        }
+
+        // Prefetch seluruh user yang ada berdasarkan username dalam satu query bulk
+        // daripada melakukan tx.user.findFirst satu per satu berulang kali
+        const usernames = preparedUsers.map((u) => u.username);
+        const existingUsers = await tx.user.findMany({
+          where: { username: { in: usernames } },
+        });
+        const existingUserMap = new Map<string, (typeof existingUsers)[0]>();
+        for (const u of existingUsers) {
+          existingUserMap.set(u.username.toLowerCase().trim(), u);
+        }
+
+        const createdCredentials: CreatedUserCredential[] = [];
+
+        let createdCount = 0;
+        let updatedCount = 0;
+        let newGroupsCreated = 0;
+
+        for (const prep of preparedUsers) {
+          const {
+            nama,
+            username,
+            nim,
+            role,
+            fakultas,
+            prodi,
+            groupName,
+            plainPassword,
+            hashedPassword,
+            qrToken,
+          } = prep;
+
+          // Auto-resolve atau buat kelompok jika nama_kelompok diisi
+          let mGroupsId: number | null = null;
+          if (groupName) {
+            const lowerGroupName = groupName.toLowerCase();
+            if (groupMap.has(lowerGroupName)) {
+              mGroupsId = groupMap.get(lowerGroupName)!;
+            } else {
+              // Buat kelompok baru otomatis
+              const newGroup = await tx.group.create({
+                data: {
+                  name: groupName,
+                  description: `Dibuat otomatis saat import pengguna (${nama})`,
+                },
+              });
+              mGroupsId = newGroup.id;
+              groupMap.set(lowerGroupName, newGroup.id);
+              newGroupsCreated++;
+            }
+          }
+
+          // Cek apakah user sudah ada dari prefetch cache map
+          const existingUser = existingUserMap.get(username.toLowerCase());
+          let savedUserId: number;
+
+          if (existingUser) {
+            // Update user yang sudah ada
+            const updated = await tx.user.update({
+              where: { id: existingUser.id },
               data: {
-                name: groupName,
-                description: `Dibuat otomatis saat import pengguna (${nama})`,
+                nama,
+                nim: nim || existingUser.nim,
+                role,
+                fakultas: fakultas || existingUser.fakultas,
+                prodi: prodi || existingUser.prodi,
+                password: hashedPassword,
+                qrToken: qrToken || existingUser.qrToken,
+                mGroupsId: mGroupsId !== null ? mGroupsId : existingUser.mGroupsId,
+                deletedAt: null,
               },
             });
-            mGroupsId = newGroup.id;
-            groupMap.set(lowerGroupName, newGroup.id);
-            newGroupsCreated++;
-          }
-        }
-
-        // Tentukan password plain: gunakan password_default jika ada, atau generate 6 digit unik (3 angka + 3 huruf)
-        let plainPassword = row.password_default ? row.password_default.trim() : "";
-        if (!plainPassword) {
-          plainPassword = generateUniqueUserPassword(usedPasswords);
-        }
-
-        // Hash password menggunakan bcrypt
-        const hashedPassword = await hashPassword(plainPassword);
-
-        // Auto-generate QR Token khusus role maba
-        let qrToken: string | null = null;
-        if (role === "maba") {
-          qrToken = generateMabaQrToken(nim, username);
-        }
-
-        // Cari apakah user sudah ada
-        const existingUser = await tx.user.findFirst({
-          where: { username },
-        });
-
-        let savedUserId: number;
-
-        if (existingUser) {
-          // Update user yang sudah ada
-          const updated = await tx.user.update({
-            where: { id: existingUser.id },
-            data: {
-              nama,
-              nim: nim || existingUser.nim,
-              role,
-              fakultas: fakultas || existingUser.fakultas,
-              prodi: prodi || existingUser.prodi,
-              password: hashedPassword,
-              qrToken: qrToken || existingUser.qrToken,
-              mGroupsId: role === "maba" ? mGroupsId : existingUser.mGroupsId,
-              deletedAt: null,
-            },
-          });
-          savedUserId = updated.id;
-          updatedCount++;
-        } else {
-          // Buat user baru
-          const created = await tx.user.create({
-            data: {
-              nama,
-              username,
-              nim,
-              role,
-              fakultas,
-              prodi,
-              password: hashedPassword,
-              qrToken,
-              mGroupsId: role === "maba" ? mGroupsId : null,
-            },
-          });
-          savedUserId = created.id;
-          createdCount++;
-        }
-
-        // Jika role adalah mentor dan kelompok diisi, hubungkan ke tabel pivot groups_mentors
-        if (role === "mentor" && mGroupsId) {
-          await tx.groupMentor.upsert({
-            where: {
-              mGroupsId_mUsersId: {
-                mGroupsId,
-                mUsersId: savedUserId,
+            savedUserId = updated.id;
+            existingUserMap.set(username.toLowerCase(), updated);
+            updatedCount++;
+          } else {
+            // Buat user baru
+            const created = await tx.user.create({
+              data: {
+                nama,
+                username,
+                nim,
+                role,
+                fakultas,
+                prodi,
+                password: hashedPassword,
+                qrToken,
+                mGroupsId: mGroupsId,
               },
-            },
-            create: {
-              mGroupsId,
-              mUsersId: savedUserId,
-            },
-            update: {
-              deletedAt: null,
-            },
+            });
+            savedUserId = created.id;
+            existingUserMap.set(username.toLowerCase(), created);
+            createdCount++;
+          }
+
+          // Sinkronisasi mentor dengan tabel pivot groups_mentors
+          if (role === "mentor") {
+            if (mGroupsId) {
+              // Hapus keterikatan mentor dengan kelompok lama agar tidak menempel di negara lain
+              await tx.groupMentor.deleteMany({
+                where: {
+                  mUsersId: savedUserId,
+                  mGroupsId: { not: mGroupsId },
+                },
+              });
+
+              await tx.groupMentor.upsert({
+                where: {
+                  mGroupsId_mUsersId: {
+                    mGroupsId,
+                    mUsersId: savedUserId,
+                  },
+                },
+                create: {
+                  mGroupsId,
+                  mUsersId: savedUserId,
+                },
+                update: {
+                  deletedAt: null,
+                },
+              });
+            } else {
+              await tx.groupMentor.deleteMany({
+                where: { mUsersId: savedUserId },
+              });
+            }
+          }
+
+          // Catat kredensial plaintext untuk diekspor ke Excel rekap Admin
+          createdCredentials.push({
+            nama,
+            nim,
+            username,
+            passwordPlain: plainPassword,
+            role,
+            fakultas,
+            prodi,
+            groupName,
           });
         }
 
-        // Catat kredensial plaintext untuk diekspor ke Excel rekap Admin
-        createdCredentials.push({
-          nama,
-          nim,
-          username,
-          passwordPlain: plainPassword,
-          role,
-          fakultas,
-          prodi,
-          groupName,
-        });
+        return {
+          success: true,
+          total: preparedUsers.length,
+          createdCount,
+          updatedCount,
+          newGroupsCreated,
+          credentials: createdCredentials,
+        };
+      },
+      {
+        maxWait: 15000,
+        timeout: 60000,
       }
-
-      return {
-        success: true,
-        total: users.length,
-        createdCount,
-        updatedCount,
-        newGroupsCreated,
-        credentials: createdCredentials,
-      };
-    });
+    );
   }
 }

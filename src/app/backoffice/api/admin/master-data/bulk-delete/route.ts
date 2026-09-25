@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         });
 
         return res.count;
-      });
+      }, { maxWait: 10000, timeout: 30000 });
 
       return NextResponse.json({
         success: true,
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
         });
 
         return res.count;
-      });
+      }, { maxWait: 10000, timeout: 30000 });
 
       return NextResponse.json({
         success: true,

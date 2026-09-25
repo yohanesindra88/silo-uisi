@@ -24,19 +24,44 @@ export class UserModel {
   }
 
   /**
-   * Mengambil semua user aktif (deletedAt: null) dengan filter opsional (role / kelompok)
+   * Mengambil semua user aktif (deletedAt: null) dengan filter opsional (role / kelompok).
+   * Mendukung relasi m_groups langsung (untuk maba) dan relasi pivot groups_mentors (untuk mentor),
+   * sehingga mentor selalu terafiliasi dengan kelompok/negaranya secara konsisten.
    */
   static async getAll(filter?: { role?: string; mGroupsId?: number }) {
-    return prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: {
         deletedAt: null,
         ...(filter?.role ? { role: filter.role } : {}),
-        ...(filter?.mGroupsId ? { mGroupsId: filter.mGroupsId } : {}),
+        ...(filter?.mGroupsId
+          ? {
+              OR: [
+                { mGroupsId: filter.mGroupsId },
+                { groupMentors: { some: { mGroupsId: filter.mGroupsId, deletedAt: null } } },
+              ],
+            }
+          : {}),
       },
       include: {
         group: true,
+        groupMentors: {
+          where: { deletedAt: null },
+          include: { group: true },
+        },
       },
       orderBy: { nama: "asc" },
+    });
+
+    return users.map((u) => {
+      const primaryMentoredGroup = u.groupMentors?.[0]?.group || null;
+      const resolvedGroup = u.group || primaryMentoredGroup;
+      const resolvedGroupId = u.mGroupsId || u.groupMentors?.[0]?.mGroupsId || null;
+
+      return {
+        ...u,
+        mGroupsId: resolvedGroupId,
+        group: resolvedGroup,
+      };
     });
   }
 
@@ -44,7 +69,7 @@ export class UserModel {
    * Mengambil user berdasarkan ID (hanya yang aktif)
    */
   static async getById(id: number) {
-    return prisma.user.findFirst({
+    const u = await prisma.user.findFirst({
       where: { id, deletedAt: null },
       include: {
         group: true,
@@ -54,42 +79,82 @@ export class UserModel {
         },
       },
     });
+    if (!u) return null;
+    const resolvedGroup = u.group || u.groupMentors?.[0]?.group || null;
+    return {
+      ...u,
+      mGroupsId: u.mGroupsId || resolvedGroup?.id || null,
+      group: resolvedGroup,
+    };
   }
 
   /**
    * Mengambil user berdasarkan Username
    */
   static async getByUsername(username: string) {
-    return prisma.user.findFirst({
+    const u = await prisma.user.findFirst({
       where: { username, deletedAt: null },
       include: {
         group: true,
+        groupMentors: {
+          where: { deletedAt: null },
+          include: { group: true },
+        },
       },
     });
+    if (!u) return null;
+    const resolvedGroup = u.group || u.groupMentors?.[0]?.group || null;
+    return {
+      ...u,
+      mGroupsId: u.mGroupsId || resolvedGroup?.id || null,
+      group: resolvedGroup,
+    };
   }
 
   /**
    * Mengambil user berdasarkan NIM
    */
   static async getByNim(nim: string) {
-    return prisma.user.findFirst({
+    const u = await prisma.user.findFirst({
       where: { nim, deletedAt: null },
       include: {
         group: true,
+        groupMentors: {
+          where: { deletedAt: null },
+          include: { group: true },
+        },
       },
     });
+    if (!u) return null;
+    const resolvedGroup = u.group || u.groupMentors?.[0]?.group || null;
+    return {
+      ...u,
+      mGroupsId: u.mGroupsId || resolvedGroup?.id || null,
+      group: resolvedGroup,
+    };
   }
 
   /**
    * Mengambil user berdasarkan QR Token
    */
   static async getByQrToken(qrToken: string) {
-    return prisma.user.findFirst({
+    const u = await prisma.user.findFirst({
       where: { qrToken, deletedAt: null },
       include: {
         group: true,
+        groupMentors: {
+          where: { deletedAt: null },
+          include: { group: true },
+        },
       },
     });
+    if (!u) return null;
+    const resolvedGroup = u.group || u.groupMentors?.[0]?.group || null;
+    return {
+      ...u,
+      mGroupsId: u.mGroupsId || resolvedGroup?.id || null,
+      group: resolvedGroup,
+    };
   }
 
   /**

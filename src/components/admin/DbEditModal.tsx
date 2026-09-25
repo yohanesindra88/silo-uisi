@@ -18,6 +18,10 @@ export interface UserEditData {
   prodi?: string | null;
   mGroupsId?: number | null;
   group?: { id: number; name: string } | null;
+  groupMentors?: Array<{
+    mGroupsId: number;
+    group?: { id: number; name: string } | null;
+  }>;
 }
 
 export interface GroupEditData {
@@ -68,7 +72,13 @@ const DbEditModalForm: React.FC<DbEditModalFormProps> = ({
   const [fakultas, setFakultas] = useState(userData?.fakultas || "");
   const [prodi, setProdi] = useState(userData?.prodi || "");
   const [selectedGroupId, setSelectedGroupId] = useState<string>(
-    userData?.mGroupsId ? String(userData.mGroupsId) : userData?.group?.id ? String(userData.group.id) : ""
+    userData?.mGroupsId
+      ? String(userData.mGroupsId)
+      : userData?.group?.id
+      ? String(userData.group.id)
+      : userData?.groupMentors?.[0]?.mGroupsId
+      ? String(userData.groupMentors[0].mGroupsId)
+      : ""
   );
 
   const [groupName, setGroupName] = useState(groupData?.name || "");

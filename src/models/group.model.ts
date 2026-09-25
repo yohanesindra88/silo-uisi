@@ -16,8 +16,13 @@ export class GroupModel {
       where: { deletedAt: null },
       include: includeRelations
         ? {
-            mentors: { include: { user: true } },
-            users: true,
+            mentors: {
+              where: { deletedAt: null, user: { deletedAt: null } },
+              include: { user: true },
+            },
+            users: {
+              where: { deletedAt: null, role: "maba" },
+            },
           }
         : undefined,
       orderBy: { name: "asc" },
@@ -32,8 +37,13 @@ export class GroupModel {
       where: { id, deletedAt: null },
       include: includeRelations
         ? {
-            mentors: { include: { user: true } },
-            users: true,
+            mentors: {
+              where: { deletedAt: null, user: { deletedAt: null } },
+              include: { user: true },
+            },
+            users: {
+              where: { deletedAt: null, role: "maba" },
+            },
           }
         : undefined,
     });

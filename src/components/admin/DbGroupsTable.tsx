@@ -6,7 +6,7 @@ import { GroupEditData } from "./DbEditModal";
 
 export interface DbGroupItem extends GroupEditData {
   createdAt?: string;
-  users?: Array<{ id: number; nama: string }>;
+  users?: Array<{ id: number; nama: string; role?: string }>;
   mentors?: Array<{
     mUsersId: number;
     user: { id: number; nama: string; username: string };
@@ -185,7 +185,9 @@ export const DbGroupsTable: React.FC<DbGroupsTableProps> = ({
               ) : (
                 filteredGroups.map((g) => {
                   const isChecked = selectedIds.has(g.id);
-                  const memberCount = g.users?.length ?? 0;
+                  const memberCount = (g.users || []).filter(
+                    (u) => !u.role || u.role.toLowerCase() === "maba"
+                  ).length;
                   const mentorNames = (g.mentors || []).map((m) => m.user?.nama).filter(Boolean);
 
                   return (
@@ -261,7 +263,7 @@ export const DbGroupsTable: React.FC<DbGroupsTableProps> = ({
                           }}
                         >
                           <Users size={12} />
-                          <span>{memberCount} Mahasiswa</span>
+                          <span>{memberCount} Mahasiswa Baru</span>
                         </span>
                       </td>
 

@@ -44,7 +44,9 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
         const matchNama = (u.nama || "").toLowerCase().includes(q);
         const matchNim = (u.nim || "").toLowerCase().includes(q);
         const matchUser = (u.username || "").toLowerCase().includes(q);
-        const matchGroup = (u.group?.name || "").toLowerCase().includes(q);
+        const matchGroup =
+          (u.group?.name || "").toLowerCase().includes(q) ||
+          (u.groupMentors || []).some((gm) => (gm.group?.name || "").toLowerCase().includes(q));
         const matchProdi = (u.prodi || "").toLowerCase().includes(q);
         if (!matchNama && !matchNim && !matchUser && !matchGroup && !matchProdi) {
           return false;
@@ -325,6 +327,24 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
                           >
                             {u.group.name}
                           </span>
+                        ) : u.groupMentors && u.groupMentors.length > 0 ? (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                            {u.groupMentors.map((gm, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  padding: "3px 8px",
+                                  borderRadius: "8px",
+                                  backgroundColor: "rgba(14, 165, 233, 0.1)",
+                                  color: "#0284C7",
+                                  fontWeight: 700,
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                {gm.group?.name || `Kelompok #${gm.mGroupsId}`}
+                              </span>
+                            ))}
+                          </div>
                         ) : (
                           <span style={{ color: "#9CA3AF", fontSize: "0.75rem" }}>- Tanpa Kelompok -</span>
                         )}
