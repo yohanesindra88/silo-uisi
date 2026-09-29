@@ -14,9 +14,9 @@ import {
   Download 
 } from "lucide-react";
 
-// Configure local worker path for pdfjs-dist
+// Configure worker path for pdfjs-dist to match exactly the loaded library version
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
 interface PageProps {
@@ -125,8 +125,8 @@ export default function GuidebookFlipbook({ pdfUrl = "/guidebook.pdf" }: Guidebo
         setErrorMsg(null);
         setProgress(5);
 
-        // Fetch PDF binary data directly to ensure reliable loading
-        const response = await fetch(pdfUrl);
+        // Fetch PDF binary data directly to ensure reliable loading (added cache-buster)
+        const response = await fetch(`${pdfUrl}?v=${new Date().getTime()}`);
         if (!response.ok) {
           throw new Error(`Gagal mengunduh PDF (HTTP ${response.status})`);
         }
@@ -390,11 +390,12 @@ export default function GuidebookFlipbook({ pdfUrl = "/guidebook.pdf" }: Guidebo
                 {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
               <a
-                href="https://drive.google.com/drive/folders/1btpo7hne9yhTdnpBKHs5KNvLcUui-ju_?usp=sharing"
+                href={pdfUrl}
+                download="Guidebook_AETHERA_SILO_UISI_2026.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.downloadBtn}
-                title="Unduh PDF Asli dari Google Drive"
+                title="Unduh PDF"
               >
                 <Download size={15} />
                 <span>Unduh PDF</span>
