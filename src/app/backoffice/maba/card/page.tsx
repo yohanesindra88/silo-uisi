@@ -24,6 +24,7 @@ import {
 import { QRCodeCanvas } from "qrcode.react";
 import { MobileShell } from "@/components/ui/mobile-shell";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { formatDateShort } from "@/utils/date";
 
 interface SessionItem {
   id: number;
@@ -47,14 +48,7 @@ interface AttendanceRecord {
 }
 
 const formatSessionDate = (dateVal?: any): string => {
-  if (!dateVal) return "-";
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return "-";
-  const day = d.getDate();
-  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-  const month = months[d.getMonth()];
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
+  return formatDateShort(dateVal);
 };
 
 const formatSessionTime = (dateVal?: any): string => {

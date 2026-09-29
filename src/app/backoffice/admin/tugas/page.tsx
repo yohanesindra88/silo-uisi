@@ -29,6 +29,8 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { formatDateShort } from "@/utils/date";
 
 interface UserProfile {
   id: number;
@@ -125,6 +127,10 @@ export default function AdminTugasPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       // 2. Seluruh Maba dari Basis Data
@@ -706,7 +712,7 @@ export default function AdminTugasPage() {
                     <span>
                       Batas:{" "}
                       {item.dueDate
-                        ? new Date(item.dueDate).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })
+                        ? formatDateShort(item.dueDate, { withTime: true })
                         : "-"}
                     </span>
                   </div>
@@ -1139,10 +1145,7 @@ export default function AdminTugasPage() {
                                 <span>
                                   Dikirim:{" "}
                                   {row.submittedAt
-                                    ? new Date(row.submittedAt).toLocaleString("id-ID", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                      })
+                                    ? formatDateShort(row.submittedAt, { withTime: true })
                                     : "-"}
                                 </span>
                                 {row.fileUrl && (
@@ -1239,10 +1242,7 @@ export default function AdminTugasPage() {
                                   {row.reviewedAt && (
                                     <span style={{ fontSize: "0.65rem", opacity: 0.65, textAlign: "right" }}>
                                       Dinilai pada:{" "}
-                                      {new Date(row.reviewedAt).toLocaleString("id-ID", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                      })}
+                                      {formatDateShort(row.reviewedAt, { withTime: true })}
                                     </span>
                                   )}
                                 </div>
@@ -1675,19 +1675,10 @@ export default function AdminTugasPage() {
                 <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
                   Batas Waktu Pengumpulan (Due Date):
                 </label>
-                <input
-                  type="datetime-local"
+                <DateTimePicker
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={setDueDate}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(31, 75, 93, 0.2)",
-                    fontSize: "0.85rem",
-                    boxSizing: "border-box",
-                  }}
                 />
               </div>
 

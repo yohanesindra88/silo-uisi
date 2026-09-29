@@ -2,9 +2,9 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
-import { formatDateTimeInput, toDateTimeLocalValue, parseDateInput } from "@/utils/date";
+import { formatDateInput, toDateInputValue, parseDateInput } from "@/utils/date";
 
-interface DateTimePickerProps {
+export interface DatePickerProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -13,56 +13,56 @@ interface DateTimePickerProps {
   id?: string;
   name?: string;
   style?: React.CSSProperties;
+  className?: string;
 }
 
 /**
- * Komponen DateTimePicker dengan textbox format "DD/MM/YYYY HH:mm" (Contoh: 29/09/2026 07:00)
- * dan tombol icon kalender yang menyatu bersih tanpa background di dalam textbox.
- * Mengklik tombol icon kalender langsung membuka popup kalender & pemilih waktu.
+ * Komponen DatePicker dengan format konsisten "DD/MM/YYYY" (Contoh: 29/09/2026).
+ * Menyediakan textbox format DD/MM/YYYY serta icon kalender yang terintegrasi rapi.
+ * Mengklik tombol kalender akan membuka picker kalender browser.
  */
-export function DateTimePicker({
+export function DatePicker({
   value,
   onChange,
-  placeholder = "DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)",
+  placeholder = "DD/MM/YYYY (Contoh: 29/09/2026)",
   disabled = false,
   required = false,
   id,
   name,
   style,
-}: DateTimePickerProps) {
+  className,
+}: DatePickerProps) {
   const pickerRef = useRef<HTMLInputElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-
-  const [textVal, setTextVal] = useState(() => formatDateTimeInput(value));
+  const [textVal, setTextVal] = useState(() => formatDateInput(value));
 
   // Sinkronkan textVal saat value prop berubah dari luar
   useEffect(() => {
-    setTextVal(formatDateTimeInput(value));
+    setTextVal(formatDateInput(value));
   }, [value]);
 
-  // Nilai untuk elemen picker native (YYYY-MM-DDTHH:mm)
-  const nativeValue = toDateTimeLocalValue(value);
+  const nativeValue = toDateInputValue(value);
 
-  // Saat user memilih tanggal & jam dari popup kalender
+  // User memilih tanggal lewat popup kalender
   const handleNativePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value; // YYYY-MM-DDTHH:mm
+    const rawVal = e.target.value; // YYYY-MM-DD
     if (!rawVal) {
       setTextVal("");
       onChange("");
       return;
     }
-    setTextVal(formatDateTimeInput(rawVal));
+    setTextVal(formatDateInput(rawVal));
     onChange(rawVal);
   };
 
-  // Saat user mengetik langsung di textbox DD/MM/YYYY HH:mm
+  // User mengetik langsung di textbox DD/MM/YYYY
   const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputStr = e.target.value;
     setTextVal(inputStr);
 
     const parsed = parseDateInput(inputStr);
     if (parsed) {
-      onChange(toDateTimeLocalValue(parsed));
+      onChange(toDateInputValue(parsed));
     } else if (!inputStr.trim()) {
       onChange("");
     }
@@ -71,11 +71,10 @@ export function DateTimePicker({
   // Saat blur, re-format jika valid
   const handleBlur = () => {
     if (value) {
-      setTextVal(formatDateTimeInput(value));
+      setTextVal(formatDateInput(value));
     }
   };
 
-  // Membuka popup kalender browser saat tombol icon kalender diklik
   const handleOpenPicker = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -96,7 +95,7 @@ export function DateTimePicker({
 
   return (
     <div style={{ position: "relative", width: "100%", display: "inline-block" }}>
-      {/* Textbox utama yang menampilkan format DD/MM/YYYY HH:mm */}
+      {/* Textbox utama yang selalu berformat DD/MM/YYYY */}
       <input
         type="text"
         id={id}
@@ -107,6 +106,7 @@ export function DateTimePicker({
         value={textVal}
         onChange={handleTextInputChange}
         onBlur={handleBlur}
+        className={className}
         style={{
           width: "100%",
           padding: "8px 36px 8px 10px",
@@ -122,7 +122,7 @@ export function DateTimePicker({
         }}
       />
 
-      {/* Tombol Icon Kalender Menyatu Tanpa Background */}
+      {/* Tombol Icon Kalender */}
       <button
         type="button"
         tabIndex={0}
@@ -131,7 +131,7 @@ export function DateTimePicker({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         title="Klik untuk membuka kalender"
-        aria-label="Buka kalender tanggal & waktu"
+        aria-label="Buka kalender tanggal"
         style={{
           position: "absolute",
           right: "6px",
@@ -155,10 +155,10 @@ export function DateTimePicker({
         <Calendar size={17} />
       </button>
 
-      {/* Input datetime-local tersembunyi yang dibuka oleh tombol showPicker() */}
+      {/* Input date native tersembunyi */}
       <input
         ref={pickerRef}
-        type="datetime-local"
+        type="date"
         tabIndex={-1}
         aria-hidden="true"
         disabled={disabled}
@@ -182,3 +182,5 @@ export function DateTimePicker({
     </div>
   );
 }
+
+export default DatePicker;

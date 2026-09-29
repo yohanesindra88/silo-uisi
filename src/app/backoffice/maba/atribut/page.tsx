@@ -18,6 +18,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DatePicker } from "@/components/ui/date-picker";
+import { formatDateLong } from "@/utils/date";
 
 interface AttributeStatusItem {
   id: number;
@@ -49,16 +51,7 @@ interface MabaStatusResponse {
 }
 
 const formatDateId = (dateStr: string) => {
-  if (!dateStr) return "-";
-  const normalized = dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00.000Z`;
-  const d = new Date(normalized);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatDateLong(dateStr);
 };
 
 const getTodayInputStr = () => {
@@ -176,24 +169,16 @@ export default function MabaAtributPage() {
           </div>
         </div>
 
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => {
-            if (e.target.value) {
-              setSelectedDate(e.target.value);
-            }
-          }}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "10px",
-            border: "1px solid rgba(31, 75, 93, 0.2)",
-            fontSize: "0.82rem",
-            fontWeight: 600,
-            outline: "none",
-            color: "#1F1E19",
-          }}
-        />
+        <div style={{ minWidth: "160px" }}>
+          <DatePicker
+            value={selectedDate}
+            onChange={(val) => {
+              if (val) {
+                setSelectedDate(val);
+              }
+            }}
+          />
+        </div>
       </div>
 
       {/* 3. Kategori Tabs: Barang Individu vs Barang Kelompok */}

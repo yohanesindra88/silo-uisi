@@ -36,7 +36,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 2,
     title: "Kaos Aethera",
-    desc: "Combed 30s hitam elegan dengan sablon plastisol tahan lama.",
+    desc: "Combed 30s Putih elegan dengan sablon plastisol tahan lama.",
     price: "Rp 80.000",
     badge: "BEST SELLER",
     badgeType: "best",
@@ -49,7 +49,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 3,
     title: "Kaos Aethera",
-    desc: "Combed 30s hitam elegan dengan sablon plastisol tahan lama.",
+    desc: "Combed 30s Putih elegan dengan sablon plastisol tahan lama.",
     price: "Rp 80.000",
     badge: "BEST SELLER",
     badgeType: "best",
@@ -62,7 +62,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 4,
     title: "Sticker Pack",
-    desc: "8 Rasi eksklusif vinyl anti air dengan die-cut presisi.",
+    desc: "1 Pack Stikcker eksklusif vinyl anti air dengan die-cut presisi.",
     price: "Rp 10.000",
     badge: "NEW",
     badgeType: "new",
@@ -75,7 +75,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 5,
     title: "Totebag",
-    desc: "Kanvas tebal putih tulang dengan kompartemen luas.",
+    desc: "Kanvas tebal Berwarna Hitam dengan kompartemen luas.",
     price: "Rp 20.000",
     badge: "TRENDING",
     badgeType: "trending",
@@ -114,7 +114,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 8,
     title: "Topi",
-    desc: "Tali ID card premium dengan clip metal dan sablon logo Aethera.",
+    desc: "3 warnna Topi engan logo aethera Di tengah Menjadi sangat kerenn",
     price: "Rp 30.000",
     badge: "NEW",
     badgeType: "new",
@@ -127,7 +127,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 9,
     title: "Kipas",
-    desc: "Tali ID card premium dengan clip metal dan sablon logo Aethera.",
+    desc: "Wajah lucu maskot Aethera Dapat Mendingingkan udara panas.",
     price: "Rp 10.000",
     badge: "NEW",
     badgeType: "new",
@@ -140,7 +140,7 @@ export const MERCH_ITEMS: MerchItem[] = [
   {
     id: 10,
     title: "Ganci",
-    desc: "Tali ID card premium dengan clip metal dan sablon logo Aethera.",
+    desc: "Gantungan Kuci Acrilic Eksklusif Aethera SILO UISI 2026 .",
     price: "Rp 10.000",
     badge: "NEW",
     badgeType: "new",

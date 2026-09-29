@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
+import { formatDateShort } from "@/utils/date";
 
 // Helper escape field CSV sesuai RFC 4180
 function escapeCsv(value: string | number | null | undefined): string {
@@ -92,10 +93,7 @@ export async function GET(req: NextRequest) {
 
         if (sub) {
           submitTime = sub.submittedAt
-            ? new Date(sub.submittedAt).toLocaleString("id-ID", {
-                dateStyle: "short",
-                timeStyle: "medium",
-              })
+            ? formatDateShort(sub.submittedAt, { withTime: true })
             : "-";
           fileUrl = sub.fileUrl;
           notes = sub.notes || "-";
@@ -117,10 +115,7 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        const dueFormatted = new Date(assignment.dueDate).toLocaleString("id-ID", {
-          dateStyle: "short",
-          timeStyle: "short",
-        });
+        const dueFormatted = formatDateShort(assignment.dueDate, { withTime: true });
 
         const row = [
           counter++,

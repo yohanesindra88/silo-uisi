@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
+import { formatDateShort } from "@/utils/date";
 
 // Helper escape field CSV sesuai RFC 4180
 function escapeCsv(value: string | number | null | undefined): string {
@@ -95,10 +96,7 @@ export async function GET(req: NextRequest) {
 
         if (attendance) {
           status = attendance.status; // "Hadir", "Terlambat", "Izin", "Sakit"
-          scanTime = new Date(attendance.createdAt).toLocaleString("id-ID", {
-            dateStyle: "short",
-            timeStyle: "medium",
-          });
+          scanTime = formatDateShort(attendance.createdAt, { withTime: true });
         }
 
         // Filter status jika diberikan

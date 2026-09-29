@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { formatDateShort } from "@/utils/date";
 
 interface UserProfile {
   id: number;
@@ -71,6 +72,10 @@ export default function MentorTugasPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       if (meData.user?.id) {
@@ -335,7 +340,7 @@ export default function MentorTugasPage() {
                   <span style={{ fontSize: "0.7rem", color: "rgba(31, 75, 93, 0.6)" }}>
                     {(() => {
                       const dateVal = sub.submittedAt || sub.submitted_at;
-                      return dateVal ? new Date(dateVal).toLocaleDateString("id-ID") : "-";
+                      return dateVal ? formatDateShort(dateVal) : "-";
                     })()}
                   </span>
                 </div>
@@ -431,10 +436,7 @@ export default function MentorTugasPage() {
               <div style={{ fontSize: "0.72rem", color: "rgba(31, 75, 93, 0.65)", marginTop: "4px" }}>
                 Waktu Pengumpulan:{" "}
                 {selectedSub.submittedAt || selectedSub.submitted_at
-                  ? new Date(selectedSub.submittedAt || (selectedSub.submitted_at as string)).toLocaleString("id-ID", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })
+                  ? formatDateShort(selectedSub.submittedAt || (selectedSub.submitted_at as string), { withTime: true })
                   : "-"}
               </div>
 

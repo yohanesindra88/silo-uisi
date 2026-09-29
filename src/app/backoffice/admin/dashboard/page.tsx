@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { formatDateTimeInput, parseDateTimeInput } from "@/utils/date";
+import { formatDateTimeInput, parseDateTimeInput, parseDateInput, formatDateShort } from "@/utils/date";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 interface UserProfile {
@@ -50,14 +50,7 @@ interface SessionItem {
 }
 
 const formatSessionDate = (dateVal?: any): string => {
-  if (!dateVal) return "-";
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return "-";
-  const day = d.getDate();
-  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-  const month = months[d.getMonth()];
-  const year = String(d.getFullYear()).slice(-2);
-  return `${day} ${month} ${year}`;
+  return formatDateShort(dateVal);
 };
 
 const formatSessionTime = (dateVal?: any): string => {
@@ -126,6 +119,10 @@ export default function AdminDashboardPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       // 2. Daftar sesi kegiatan dari database
@@ -215,7 +212,7 @@ export default function AdminDashboardPage() {
     const endDate = parseDateTimeInput(sessionEnd);
 
     if (!startDate || !endDate) {
-      setFormFeedback("Format waktu tidak valid. Gunakan format DD/MM/YY HH:mm (Contoh: 17/09/26 07:00)");
+      setFormFeedback("Format waktu tidak valid. Gunakan format DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)");
       return;
     }
 
@@ -279,6 +276,12 @@ export default function AdminDashboardPage() {
     setSubmitting(true);
     setFormFeedback(null);
 
+    const parsedDue = parseDateInput(assignmentDueDate);
+    if (!parsedDue) {
+      setFormFeedback("Format batas waktu tidak valid. Gunakan format DD/MM/YYYY HH:mm");
+      return;
+    }
+
     try {
       const res = await fetch("/api/assignments", {
         method: "POST",
@@ -286,8 +289,8 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           title: assignmentTitle,
           description: assignmentDesc,
-          dueDate: new Date(assignmentDueDate).toISOString(),
-          due_date: new Date(assignmentDueDate).toISOString(),
+          dueDate: parsedDue.toISOString(),
+          due_date: parsedDue.toISOString(),
           attachmentUrl: assignmentUrl || undefined,
           attachment_url: assignmentUrl || undefined,
           createdBy: user?.id,
@@ -1088,12 +1091,12 @@ export default function AdminDashboardPage() {
                 </label>
                 <DateTimePicker
                   required
-                  placeholder="DD/MM/YY HH:mm"
+                  placeholder="DD/MM/YYYY HH:mm"
                   value={sessionStart}
                   onChange={setSessionStart}
                 />
                 <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
-                  Format: DD/MM/YY HH:mm
+                  Format: DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)
                 </span>
               </div>
 
@@ -1103,12 +1106,12 @@ export default function AdminDashboardPage() {
                 </label>
                 <DateTimePicker
                   required
-                  placeholder="DD/MM/YY HH:mm"
+                  placeholder="DD/MM/YYYY HH:mm"
                   value={sessionEnd}
                   onChange={setSessionEnd}
                 />
                 <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
-                  Format: DD/MM/YY HH:mm
+                  Format: DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)
                 </span>
               </div>
             </div>
@@ -1252,19 +1255,10 @@ export default function AdminDashboardPage() {
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
                 Batas Waktu (Due Date):
               </label>
-              <input
-                type="datetime-local"
+              <DateTimePicker
                 value={assignmentDueDate}
-                onChange={(e) => setAssignmentDueDate(e.target.value)}
+                onChange={setAssignmentDueDate}
                 required
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(31, 75, 93, 0.2)",
-                  fontSize: "0.85rem",
-                  boxSizing: "border-box",
-                }}
               />
             </div>
 

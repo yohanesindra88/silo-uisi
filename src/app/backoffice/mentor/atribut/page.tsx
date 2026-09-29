@@ -27,6 +27,8 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DatePicker } from "@/components/ui/date-picker";
+import { formatDateLong } from "@/utils/date";
 
 interface AttributeItem {
   id: number;
@@ -75,16 +77,7 @@ interface MentorCheckData {
 }
 
 const formatDateId = (dateStr: string) => {
-  if (!dateStr) return "-";
-  const normalized = dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00.000Z`;
-  const d = new Date(normalized);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatDateLong(dateStr);
 };
 
 const getTodayInputStr = () => {
@@ -138,6 +131,10 @@ export default function MentorAtributPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUserProfile(meData.user);
 
       // 2. Ambil data checklist
@@ -491,24 +488,12 @@ export default function MentorAtributPage() {
             <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "4px" }}>
               Tanggal Kegiatan:
             </label>
-            <input
-              type="date"
+            <DatePicker
               value={selectedDate}
-              onChange={(e) => {
-                if (e.target.value) {
-                  setSelectedDate(e.target.value);
+              onChange={(val) => {
+                if (val) {
+                  setSelectedDate(val);
                 }
-              }}
-              style={{
-                width: "100%",
-                padding: "9px 12px",
-                borderRadius: "10px",
-                border: "1px solid rgba(31, 75, 93, 0.2)",
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                outline: "none",
-                color: "#1F1E19",
-                boxSizing: "border-box",
               }}
             />
           </div>

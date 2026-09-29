@@ -191,7 +191,7 @@ export default function AdminMasterDataPage() {
           return;
         }
         const data = await res.json();
-        if (data.user.role !== "admin" && data.user.role !== "panitia") {
+        if (!data.success || !data.user || (data.user.role !== "admin" && data.user.role !== "panitia")) {
           router.push("/login?error=unauthorized");
           return;
         }
@@ -1098,6 +1098,7 @@ export default function AdminMasterDataPage() {
               <>
                 <DbUsersTable
                   users={dbUsers}
+                  groups={dbGroups}
                   selectedIds={selectedUserIds}
                   onToggleSelect={toggleUserSelect}
                   onSelectAll={selectAllUsers}

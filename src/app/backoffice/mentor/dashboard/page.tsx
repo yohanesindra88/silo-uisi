@@ -28,6 +28,7 @@ import {
 import { useRouter } from "next/navigation";
 import { ScanResultModal, ScanResultData } from "@/components/scanner/ScanResultModal";
 import { getAllowedProdisForMentor } from "@/config/attendance";
+import { formatDateShort } from "@/utils/date";
 
 interface UserProfile {
   id: number;
@@ -79,14 +80,7 @@ interface AttendanceItem {
 }
 
 const formatSessionDate = (dateVal?: string | Date | null): string => {
-  if (!dateVal) return "-";
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return "-";
-  const day = d.getDate();
-  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-  const month = months[d.getMonth()];
-  const year = String(d.getFullYear()).slice(-2);
-  return `${day} ${month} ${year}`;
+  return formatDateShort(dateVal);
 };
 
 const formatSessionTime = (dateVal?: string | Date | null): string => {
@@ -214,6 +208,10 @@ export default function MentorDashboardPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       const currentUser = meData.user;
       setUser(currentUser);
 

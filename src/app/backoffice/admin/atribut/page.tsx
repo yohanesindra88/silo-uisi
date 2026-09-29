@@ -25,6 +25,8 @@ import {
   Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DatePicker } from "@/components/ui/date-picker";
+import { formatDateLong } from "@/utils/date";
 
 interface AttributeItem {
   id: number;
@@ -47,16 +49,7 @@ interface UserProfile {
 }
 
 const formatDateId = (dateStr: string) => {
-  if (!dateStr) return "-";
-  const normalized = dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00.000Z`;
-  const d = new Date(normalized);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatDateLong(dateStr);
 };
 
 const getTodayInputStr = () => {
@@ -95,6 +88,10 @@ export default function AdminAtributPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       if (meData.user.role !== "admin" && meData.user.role !== "panitia") {
@@ -417,19 +414,11 @@ export default function AdminAtributPage() {
             />
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <input
-              type="date"
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: "160px" }}>
+            <DatePicker
               value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "10px",
-                border: "1px solid rgba(31, 75, 93, 0.15)",
-                fontSize: "0.82rem",
-                outline: "none",
-                color: "#1F1E19",
-              }}
+              onChange={(val) => setFilterDate(val)}
+              placeholder="DD/MM/YYYY"
             />
             {filterDate && (
               <button
@@ -695,20 +684,10 @@ export default function AdminAtributPage() {
                 <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F4B5D", marginBottom: "6px" }}>
                   Tanggal Kegiatan / Target Date *
                 </label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formDate}
-                  onChange={(e) => setFormDate(e.target.value)}
+                  onChange={(val) => setFormDate(val)}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(31, 75, 93, 0.2)",
-                    fontSize: "0.85rem",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
                 />
               </div>
 

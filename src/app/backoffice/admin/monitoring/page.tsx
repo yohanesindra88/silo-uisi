@@ -23,7 +23,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
-import { formatDateTimeInput, parseDateTimeInput } from "@/utils/date";
+import { formatDateTimeInput, parseDateTimeInput, formatDateShort } from "@/utils/date";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 interface UserProfile {
@@ -79,9 +79,10 @@ const formatTimeRange = (startStr?: string, endStr?: string) => {
   try {
     const s = new Date(startStr);
     const e = new Date(endStr);
-    const timeStart = s.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    const timeEnd = e.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    const dateStr = s.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const timeStart = `${pad(s.getHours())}:${pad(s.getMinutes())}`;
+    const timeEnd = `${pad(e.getHours())}:${pad(e.getMinutes())}`;
+    const dateStr = formatDateShort(s);
     return `${dateStr}, ${timeStart} - ${timeEnd} WIB`;
   } catch {
     return "-";
@@ -157,6 +158,10 @@ export default function AdminMonitoringPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       // 2. Sesi
@@ -233,10 +238,7 @@ export default function AdminMonitoringPage() {
               sessionAttendanceType: sessType,
               sessionKeterangan: sessKet,
               scanTime: att.createdAt || att.scannedAt
-                ? new Date(att.createdAt || att.scannedAt).toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                ? formatDateShort(att.createdAt || att.scannedAt, { withTime: true })
                 : "-",
               status: att.status || "Hadir",
             });
@@ -283,10 +285,7 @@ export default function AdminMonitoringPage() {
             sessionName: att.session?.name || "Sesi",
             sessionId: sId,
             scanTime: att.createdAt || att.scannedAt
-              ? new Date(att.createdAt || att.scannedAt).toLocaleTimeString("id-ID", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
+              ? formatDateShort(att.createdAt || att.scannedAt, { withTime: true })
               : "-",
             status: att.status || "Hadir",
           });
@@ -338,7 +337,7 @@ export default function AdminMonitoringPage() {
     const end = parseDateTimeInput(newEndSessions);
 
     if (!start || !end) {
-      setFormError("Format tanggal & waktu tidak valid. Gunakan format DD/MM/YY HH:mm (Contoh: 17/09/26 07:00)");
+      setFormError("Format tanggal & waktu tidak valid. Gunakan format DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)");
       return;
     }
 
@@ -427,7 +426,7 @@ export default function AdminMonitoringPage() {
     const end = parseDateTimeInput(editEndSessions);
 
     if (!start || !end) {
-      setEditFormError("Format tanggal & waktu tidak valid. Gunakan format DD/MM/YY HH:mm (Contoh: 17/09/26 07:00)");
+      setEditFormError("Format tanggal & waktu tidak valid. Gunakan format DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)");
       return;
     }
 
@@ -1324,13 +1323,13 @@ export default function AdminMonitoringPage() {
                   </label>
                   <DateTimePicker
                     required
-                    placeholder="DD/MM/YY HH:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     value={newStartSessions}
                     onChange={setNewStartSessions}
                     disabled={isSubmittingSession}
                   />
                   <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
-                    Format: DD/MM/YY HH:mm
+                    Format: DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)
                   </span>
                 </div>
 
@@ -1340,13 +1339,13 @@ export default function AdminMonitoringPage() {
                   </label>
                   <DateTimePicker
                     required
-                    placeholder="DD/MM/YY HH:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     value={newEndSessions}
                     onChange={setNewEndSessions}
                     disabled={isSubmittingSession}
                   />
                   <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
-                    Format: DD/MM/YY HH:mm
+                    Format: DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)
                   </span>
                 </div>
               </div>
@@ -1620,13 +1619,13 @@ export default function AdminMonitoringPage() {
                   </label>
                   <DateTimePicker
                     required
-                    placeholder="DD/MM/YY HH:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     value={editStartSessions}
                     onChange={setEditStartSessions}
                     disabled={isSubmittingEditSession}
                   />
                   <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
-                    Format: DD/MM/YY HH:mm
+                    Format: DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)
                   </span>
                 </div>
 
@@ -1636,13 +1635,13 @@ export default function AdminMonitoringPage() {
                   </label>
                   <DateTimePicker
                     required
-                    placeholder="DD/MM/YY HH:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     value={editEndSessions}
                     onChange={setEditEndSessions}
                     disabled={isSubmittingEditSession}
                   />
                   <span style={{ fontSize: "0.68rem", color: "rgba(31, 75, 93, 0.6)", marginTop: "2px", display: "block" }}>
-                    Format: DD/MM/YY HH:mm
+                    Format: DD/MM/YYYY HH:mm (Contoh: 29/09/2026 07:00)
                   </span>
                 </div>
               </div>

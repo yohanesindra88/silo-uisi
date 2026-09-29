@@ -1,6 +1,7 @@
 import { prisma } from "@/utils/prisma";
 import type { Attendance, Prisma } from "@prisma/client";
 import { canMentorScanProdi, getAllowedProdisForMentor, isProdiAttendanceType } from "@/config/attendance";
+import { formatDateLong } from "@/utils/date";
 
 export interface ScanAttendanceParams {
   qrToken: string;
@@ -133,15 +134,9 @@ export class AttendanceModel {
         const diffHours = diffMs / (1000 * 60 * 60);
 
         if (diffHours > 4) {
-          const formattedDate = session.startSessions.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "2-digit",
-          });
-          const formattedTime = session.startSessions.toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          const formattedDate = formatDateLong(session.startSessions);
+          const pad = (n: number) => String(n).padStart(2, "0");
+          const formattedTime = `${pad(session.startSessions.getHours())}:${pad(session.startSessions.getMinutes())}`;
           return {
             success: false,
             code: "SESSION_NOT_STARTED",

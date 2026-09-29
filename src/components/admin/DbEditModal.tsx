@@ -68,7 +68,8 @@ const DbEditModalForm: React.FC<DbEditModalFormProps> = ({
   const [nama, setNama] = useState(userData?.nama || "");
   const [nim, setNim] = useState(userData?.nim || "");
   const [username, setUsername] = useState(userData?.username || "");
-  const [role, setRole] = useState(userData?.role || "maba");
+  const initialRole = (userData?.role || "").toLowerCase() === "panitia" ? "admin" : (userData?.role || "maba");
+  const [role, setRole] = useState(initialRole);
   const [fakultas, setFakultas] = useState(userData?.fakultas || "");
   const [prodi, setProdi] = useState(userData?.prodi || "");
   const [selectedGroupId, setSelectedGroupId] = useState<string>(
@@ -313,8 +314,8 @@ const DbEditModalForm: React.FC<DbEditModalFormProps> = ({
                     }}
                   >
                     <option value="maba">Mahasiswa Baru (maba)</option>
-                    <option value="mentor">Mentor Pendamping</option>
-                    <option value="panitia">Panitia / Admin</option>
+                    <option value="mentor">Mentor (mentor)</option>
+                    <option value="admin">Admin (admin)</option>
                   </select>
                 </div>
 

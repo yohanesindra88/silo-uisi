@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { formatDateShort } from "@/utils/date";
 
 interface UserProfile {
   id: number;
@@ -82,6 +83,10 @@ export default function MentorMonitoringPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       // Sesi
@@ -152,7 +157,9 @@ export default function MentorMonitoringPage() {
           sessionId: sId,
           sessionAttendanceType: isSessP ? "prodi" : "grup",
           sessionKeterangan: isSessP ? "Prodi" : "Kelompok",
-          scanTime: att.createdAt || att.scannedAt ? new Date(att.createdAt || att.scannedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-",
+          scanTime: att.createdAt || att.scannedAt
+            ? formatDateShort(att.createdAt || att.scannedAt, { withTime: true })
+            : "-",
           status: att.status || "Hadir",
         });
       });

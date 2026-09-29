@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Filter, Edit3, Trash2, Users, Shield, GraduationCap } from "lucide-react";
+import { Search, Filter, Edit3, Trash2, Users, Shield, GraduationCap, Layers, RotateCcw } from "lucide-react";
 import { UserEditData } from "./DbEditModal";
 
 export interface DbUserItem extends UserEditData {
@@ -11,6 +11,7 @@ export interface DbUserItem extends UserEditData {
 
 interface DbUsersTableProps {
   users: DbUserItem[];
+  groups?: Array<{ id: number; name: string }>;
   selectedIds: Set<number>;
   onToggleSelect: (id: number) => void;
   onSelectAll: (ids: number[]) => void;
@@ -22,6 +23,7 @@ interface DbUsersTableProps {
 
 export const DbUsersTable: React.FC<DbUsersTableProps> = ({
   users,
+  groups,
   selectedIds,
   onToggleSelect,
   onSelectAll,
@@ -32,13 +34,87 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
 
-  // Filter users berdasarkan search query dan role
+  // Hitung jumlah masing-masing role sesuai dengan database (maba, mentor, admin)
+  const roleCounts = useMemo(() => {
+    let maba = 0;
+    let mentor = 0;
+    let admin = 0;
+
+    users.forEach((u) => {
+      const r = (u.role || "").toLowerCase();
+      if (r === "maba") maba++;
+      else if (r === "mentor") mentor++;
+      else if (r === "admin" || r === "panitia") admin++;
+    });
+
+    return {
+      maba,
+      mentor,
+      admin,
+    };
+  }, [users]);
+
+  // Daftar opsi kelompok dari prop groups dan users
+  const groupOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    if (groups && groups.length > 0) {
+      groups.forEach((g) => {
+        if (g.id && g.name) map.set(g.id, g.name);
+      });
+    }
+    users.forEach((u) => {
+      if (u.group?.id && u.group?.name) {
+        map.set(u.group.id, u.group.name);
+      }
+      u.groupMentors?.forEach((gm) => {
+        if (gm.group?.id && gm.group?.name) {
+          map.set(gm.group.id, gm.group.name);
+        }
+      });
+    });
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [groups, users]);
+
+  const unassignedCount = useMemo(() => {
+    return users.filter(
+      (u) => !u.mGroupsId && !u.group?.id && (!u.groupMentors || u.groupMentors.length === 0)
+    ).length;
+  }, [users]);
+
+  // Filter users berdasarkan search query, role, dan kelompok
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      if (roleFilter !== "all" && u.role.toLowerCase() !== roleFilter.toLowerCase()) {
-        return false;
+      const uRole = (u.role || "").toLowerCase();
+
+      // 1. Role Filter
+      if (roleFilter !== "all") {
+        if (roleFilter === "maba" && uRole !== "maba") return false;
+        if (roleFilter === "mentor" && uRole !== "mentor") return false;
+        if (roleFilter === "admin" && uRole !== "admin" && uRole !== "panitia") return false;
       }
+
+      // 2. Group Filter
+      if (groupFilter !== "all") {
+        if (groupFilter === "none") {
+          const hasGroup = Boolean(
+            u.mGroupsId || u.group?.id || (u.groupMentors && u.groupMentors.length > 0)
+          );
+          if (hasGroup) return false;
+        } else {
+          const targetGroupId = Number(groupFilter);
+          const matchDirect = u.mGroupsId === targetGroupId || u.group?.id === targetGroupId;
+          const matchMentor = (u.groupMentors || []).some(
+            (gm) => gm.mGroupsId === targetGroupId || gm.group?.id === targetGroupId
+          );
+          if (!matchDirect && !matchMentor) return false;
+        }
+      }
+
+      // 3. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchNama = (u.nama || "").toLowerCase().includes(q);
@@ -48,13 +124,14 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
           (u.group?.name || "").toLowerCase().includes(q) ||
           (u.groupMentors || []).some((gm) => (gm.group?.name || "").toLowerCase().includes(q));
         const matchProdi = (u.prodi || "").toLowerCase().includes(q);
-        if (!matchNama && !matchNim && !matchUser && !matchGroup && !matchProdi) {
+        const matchFakultas = (u.fakultas || "").toLowerCase().includes(q);
+        if (!matchNama && !matchNim && !matchUser && !matchGroup && !matchProdi && !matchFakultas) {
           return false;
         }
       }
       return true;
     });
-  }, [users, roleFilter, searchQuery]);
+  }, [users, roleFilter, groupFilter, searchQuery]);
 
   const filteredIds = useMemo(() => filteredUsers.map((u) => u.id), [filteredUsers]);
   const isAllSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
@@ -69,7 +146,7 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
   };
 
   const getRoleBadge = (role: string) => {
-    const r = role.toLowerCase();
+    const r = (role || "").toLowerCase();
     if (r === "maba") {
       return {
         label: "Mahasiswa Baru",
@@ -86,13 +163,16 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
       };
     } else {
       return {
-        label: "Panitia",
+        label: "Admin",
         bg: "rgba(124, 58, 237, 0.12)",
         color: "#7C3AED",
         icon: <Shield size={12} />,
       };
     }
   };
+
+  const isFilterActive =
+    roleFilter !== "all" || groupFilter !== "all" || searchQuery.trim() !== "";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -127,7 +207,7 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
           <Search size={16} color="#6B7280" />
           <input
             type="text"
-            placeholder="Cari nama, NIM, username, prodi..."
+            placeholder="Cari nama, NIM, username, kelompok, prodi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -160,11 +240,79 @@ export const DbUsersTable: React.FC<DbUsersTableProps> = ({
             }}
           >
             <option value="all">Semua Peran ({users.length})</option>
-            <option value="maba">Mahasiswa Baru ({users.filter((u) => u.role === "maba").length})</option>
-            <option value="mentor">Mentor ({users.filter((u) => u.role === "mentor").length})</option>
-            <option value="panitia">Panitia ({users.filter((u) => u.role === "panitia").length})</option>
+            <option value="maba">Mahasiswa Baru ({roleCounts.maba})</option>
+            <option value="mentor">Mentor ({roleCounts.mentor})</option>
+            <option value="admin">Admin ({roleCounts.admin})</option>
           </select>
         </div>
+
+        {/* Group Filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Layers size={15} color="#0F766E" />
+          <select
+            value={groupFilter}
+            onChange={(e) => setGroupFilter(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "10px",
+              border: "1px solid rgba(15, 118, 110, 0.25)",
+              backgroundColor: "#FFFFFF",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "#0F766E",
+              outline: "none",
+              cursor: "pointer",
+              maxWidth: "220px",
+            }}
+          >
+            <option value="all">Semua Kelompok ({users.length})</option>
+            <option value="none">Tanpa Kelompok ({unassignedCount})</option>
+            {groupOptions.map((g) => {
+              const count = users.filter((u) => {
+                const matchDirect = u.mGroupsId === g.id || u.group?.id === g.id;
+                const matchMentor = (u.groupMentors || []).some(
+                  (gm) => gm.mGroupsId === g.id || gm.group?.id === g.id
+                );
+                return matchDirect || matchMentor;
+              }).length;
+              return (
+                <option key={g.id} value={String(g.id)}>
+                  {g.name} ({count})
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* Reset Filter Button */}
+        {isFilterActive && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setRoleFilter("all");
+              setGroupFilter("all");
+            }}
+            title="Reset Semua Filter"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "8px 12px",
+              borderRadius: "10px",
+              border: "1px solid #E5E7EB",
+              backgroundColor: "#F9FAFB",
+              color: "#6B7280",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <RotateCcw size={13} />
+            <span>Reset</span>
+          </button>
+        )}
 
         <div style={{ fontSize: "0.78rem", color: "#6B7280", fontWeight: 600 }}>
           {filteredUsers.length} data ditemukan

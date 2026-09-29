@@ -23,6 +23,7 @@ import {
   PackageCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { formatDateShort } from "@/utils/date";
 
 interface UserProfile {
   id: number;
@@ -48,11 +49,7 @@ interface AssignmentItem {
 }
 
 const formatDateSafe = (d: any) => {
-  if (!d) return "-";
-  const normalized = typeof d === "string" ? d.replace(" ", "T") : d;
-  const parsed = new Date(normalized);
-  if (isNaN(parsed.getTime())) return String(d);
-  return parsed.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  return formatDateShort(d, { withTime: true });
 };
 
 interface AttendanceSummary {
@@ -92,6 +89,10 @@ export default function MabaDashboardPage() {
           return;
         }
         const meData = await meRes.json();
+        if (!meData.success || !meData.user) {
+          router.push("/login");
+          return;
+        }
         const currentUser = meData.user;
         setUser(currentUser);
 

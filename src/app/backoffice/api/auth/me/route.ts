@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { success: false, message: "Sesi tidak ditemukan. Silakan login kembali." },
-        { status: 401 }
+        { success: false, user: null, message: "Sesi tidak ditemukan. Silakan login kembali." },
+        { status: 200 }
       );
     }
 
@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
     const decoded = await verifyJwt(token);
     if (!decoded) {
       return NextResponse.json(
-        { success: false, message: "Sesi tidak valid atau telah kedaluwarsa." },
-        { status: 401 }
+        { success: false, user: null, message: "Sesi tidak valid atau telah kedaluwarsa." },
+        { status: 200 }
       );
     }
 
@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "Pengguna tidak ditemukan atau sudah dinonaktifkan." },
-        { status: 401 }
+        { success: false, user: null, message: "Pengguna tidak ditemukan atau sudah dinonaktifkan." },
+        { status: 200 }
       );
     }
 

@@ -54,12 +54,10 @@ interface SubmissionItem {
   submitted_at?: string;
 }
 
+import { formatDateShort } from "@/utils/date";
+
 const formatDueDateSafe = (d: any) => {
-  if (!d) return "-";
-  const normalized = typeof d === "string" ? d.replace(" ", "T") : d;
-  const parsed = new Date(normalized);
-  if (isNaN(parsed.getTime())) return String(d);
-  return parsed.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+  return formatDateShort(d, { withTime: true });
 };
 
 export default function MabaTugasPage() {
@@ -124,6 +122,10 @@ export default function MabaTugasPage() {
         return;
       }
       const meData = await meRes.json();
+      if (!meData.success || !meData.user) {
+        router.push("/login");
+        return;
+      }
       setUser(meData.user);
 
       // Load assignments
