@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React from "react";
 import styles from "./VideoSection.module.css";
@@ -17,18 +17,18 @@ const VIDEO_ROWS: VideoRow[] = [
   {
     id: "v1",
     youtubeId: "xtugHXaFhLY",
-    title: "Aftermovie & Highlight Keseruan SILO UISI",
-    hashtag: "#SalamAethera",
+    title: "Aftermovie & Highlight Keseruan PKKMB LANEXON",
+    hashtag: "#Lanexon 2024",
     badge: "Official Aftermovie",
-    videoPosition: "right"
+    videoPosition: "right",
   },
   {
     id: "v2",
     youtubeId: "03zyuX-I3yo",
-    title: "Dokumentasi Momen Spektakuler SILO UISI",
-    hashtag: "#KsatriaAethera",
+    title: "Opening PKKMB LANEXON 2025",
+    hashtag: "#CementExcellence",
     badge: "Opening Ceremony",
-    videoPosition: "left"
+    videoPosition: "left",
   },
   {
     id: "v3",
@@ -36,8 +36,8 @@ const VIDEO_ROWS: VideoRow[] = [
     title: "Kilas Balik Euforia & Kemeriahan Ksatria SILO",
     hashtag: "#BranaraAethera",
     badge: "Euforia SILO",
-    videoPosition: "right"
-  }
+    videoPosition: "right",
+  },
 ];
 
 export default function VideoSection() {
@@ -51,10 +51,11 @@ export default function VideoSection() {
       {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>
-          Video <span className={styles.titleGradient}>Dokumentasi SILO</span>
+          # <span className={styles.titleGradient}>PKKMB - SILO Recap</span>
         </h2>
         <p className={styles.subtitle}>
-          Tonton rekaman video keseruan, aftermovie, dan momen spektakuler berkesan perjalanan SILO Universitas Internasional Semen Indonesia.
+          Tonton rekaman video keseruan, aftermovie, dan momen spektakuler
+          berkesan perjalanan SILO Universitas Internasional Semen Indonesia.
         </p>
       </div>
 
@@ -63,9 +64,8 @@ export default function VideoSection() {
         {VIDEO_ROWS.map((row) => (
           <div
             key={row.id}
-            className={`${styles.row} ${
-              row.videoPosition === "left" ? styles.rowImageLeft : ""
-            }`}
+            className={`${styles.row} ${row.videoPosition === "left" ? styles.rowImageLeft : ""
+              }`}
           >
             {/* Video Column */}
             <div className={styles.videoCol}>

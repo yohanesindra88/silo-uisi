@@ -18,6 +18,12 @@ const SPONSORS: SponsorItem[] = [
     type: "PLATINUM",
   },
   {
+    name: "Bali PP Tour & Travel",
+    category: "Official Sponsor",
+    logoSrc: "/Sponsor/BALI PP TOUR & TRAVEL.png",
+    type: "GOLD",
+  },
+  {
     name: "BLU BCA",
     category: "Official Sponsor",
     logoSrc: "/Sponsor/BLU BCA.jpg",
@@ -33,6 +39,12 @@ const SPONSORS: SponsorItem[] = [
     name: "Sukses Jaya Abadi",
     category: "Official Sponsor",
     logoSrc: "/Sponsor/Sukses Jaya Abadi.jpeg",
+    type: "GOLD",
+  },
+  {
+    name: "Sinergi Mitra Investama",
+    category: "Official Sponsor",
+    logoSrc: "/Sponsor/Sinergi Mitra Investama.png",
     type: "GOLD",
   },
   {
@@ -60,7 +72,7 @@ const SPONSORS: SponsorItem[] = [
     type: "SILVER",
   },
   {
-    name: "Decoratic",
+    name: "Decorartic",
     category: "Official Sponsor",
     logoSrc: "/Sponsor/Decoratic.jpg",
     type: "PLATINUM",

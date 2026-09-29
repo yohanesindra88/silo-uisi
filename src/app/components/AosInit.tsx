@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from 'react';
+import 'aos/dist/aos.css';
 
 export default function AosInit() {
   useEffect(() => {
@@ -7,13 +8,12 @@ export default function AosInit() {
 
     const initAos = async () => {
       try {
-        const AOS = (await import("aos")).default;
-        await import("aos/dist/aos.css");
+        const AOS = (await import('aos')).default;
         if (!cancelled) {
           AOS.init({
             duration: 800,
             once: true,
-            easing: "ease-out-cubic",
+            easing: 'ease-out-cubic',
           });
         }
       } catch (err) {
