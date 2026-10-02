@@ -14,9 +14,9 @@ import {
   Download 
 } from "lucide-react";
 
-// Configure worker path for pdfjs-dist to match exactly the loaded library version
+// Configure worker path for pdfjs-dist matching installed v6 ES module
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 }
 
 interface PageProps {
@@ -137,7 +137,7 @@ export default function GuidebookFlipbook({ pdfUrl = "/guidebook.pdf" }: Guidebo
 
         const loadingTask = pdfjsLib.getDocument({
           data: new Uint8Array(arrayBuffer),
-          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+          cMapUrl: "/cmaps/",
           cMapPacked: true,
         });
 
