@@ -399,59 +399,55 @@ export const ImportPreviewTable: React.FC<ImportPreviewTableProps> = ({
                       )}
                     </td>
 
-                    {/* Kolom Aksi (Hanya tampil untuk data yang berstatus UPDATE / sudah ada di DB) */}
+                    {/* Kolom Aksi (Tersedia untuk semua baris data di antrean impor) */}
                     <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                      {isExistingInDb ? (
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                          <button
-                            type="button"
-                            onClick={() => onEditRow?.(r, isExistingInDb)}
-                            title="Edit data yang sudah ada di database ini"
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "5px 10px",
-                              borderRadius: "8px",
-                              border: "1px solid rgba(15, 118, 110, 0.25)",
-                              backgroundColor: "#F0FDFA",
-                              color: "#0F766E",
-                              fontSize: "0.72rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            <Pencil size={12} />
-                            <span>Edit</span>
-                          </button>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => onEditRow?.(r, isExistingInDb)}
+                          title={isExistingInDb ? "Edit data yang sudah ada di database ini" : "Edit baris data pada antrean impor"}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "5px 10px",
+                            borderRadius: "8px",
+                            border: "1px solid rgba(15, 118, 110, 0.25)",
+                            backgroundColor: "#F0FDFA",
+                            color: "#0F766E",
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <Pencil size={12} />
+                          <span>Edit</span>
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => onDeleteRow?.(r, isExistingInDb)}
-                            title="Hapus data dari database atau antrean"
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "5px 10px",
-                              borderRadius: "8px",
-                              border: "1px solid rgba(220, 38, 38, 0.3)",
-                              backgroundColor: "#FEF2F2",
-                              color: "#DC2626",
-                              fontSize: "0.72rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            <Trash2 size={12} />
-                            <span>Hapus</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ color: "#CBD5E1", fontSize: "0.85rem", fontWeight: 600 }}>-</span>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => onDeleteRow?.(r, isExistingInDb)}
+                          title={isExistingInDb ? "Hapus data dari database atau antrean" : "Hapus baris data dari antrean impor"}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "5px 10px",
+                            borderRadius: "8px",
+                            border: "1px solid rgba(220, 38, 68, 0.3)",
+                            backgroundColor: "#FEF2F2",
+                            color: "#DC2626",
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <Trash2 size={12} />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

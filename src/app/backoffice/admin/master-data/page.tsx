@@ -207,7 +207,7 @@ export default function AdminMasterDataPage() {
     checkAuth();
   }, [router, loadDbData]);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "panitia" || !user?.role;
 
   // ==========================================
   // HANDLERS: TAB & SELEKSI CHECKBOX DB
