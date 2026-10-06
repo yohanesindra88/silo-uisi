@@ -74,7 +74,7 @@ const SPONSORS: SponsorItem[] = [
   {
     name: "Decorartic",
     category: "Official Sponsor",
-    logoSrc: "/Sponsor/Decoratic.jpg",
+    logoSrc: "/Sponsor/Decorartic.jpeg",
     type: "PLATINUM",
   },
   {
@@ -87,6 +87,12 @@ const SPONSORS: SponsorItem[] = [
     name: "Firnawa Abadi",
     category: "Official Sponsor",
     logoSrc: "/Sponsor/Firnawa Abadi.jpeg",
+    type: "GOLD",
+  },
+  {
+    name: "Bank Jatim",
+    category: "Official Sponsor",
+    logoSrc: "/Sponsor/bankJatim.png",
     type: "GOLD",
   },
   {
