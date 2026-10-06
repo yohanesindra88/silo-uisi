@@ -262,7 +262,7 @@ export class AttributeModel {
     const allAttrIds = attributes.map((a: Attribute) => a.id);
 
     // 4. Ambil catatan pengecekan yang sudah ada di t_attribute_checks (hanya yang diperiksa mentor/admin/panitia)
-    let existingChecks: AttributeCheck[] = [];
+    let existingChecks: any[] = [];
     if (allAttrIds.length > 0 && (mabaList.length > 0 || targetGroupIds.length > 0)) {
       existingChecks = await prisma.attributeCheck.findMany({
         where: {
@@ -275,6 +275,11 @@ export class AttributeModel {
             { groupId: { in: targetGroupIds } },
           ],
         },
+        include: {
+          checker: {
+            select: { id: true, nama: true, role: true },
+          },
+        },
       });
     }
 
@@ -285,6 +290,7 @@ export class AttributeModel {
       notes: string | null;
       checkedAt: Date;
       checkedBy: number;
+      checkedByName?: string;
     }>> = {};
 
     // Buat map pencarian untuk kelompok: groupCheckMap[groupId][attributeId]
@@ -294,6 +300,7 @@ export class AttributeModel {
       notes: string | null;
       checkedAt: Date;
       checkedBy: number;
+      checkedByName?: string;
     }>> = {};
 
     for (const check of existingChecks) {
@@ -307,6 +314,7 @@ export class AttributeModel {
           notes: check.notes,
           checkedAt: check.checkedAt,
           checkedBy: check.checkedBy,
+          checkedByName: check.checker?.nama,
         };
       } else if (check.groupId) {
         if (!groupCheckMap[check.groupId]) {
@@ -318,6 +326,7 @@ export class AttributeModel {
           notes: check.notes,
           checkedAt: check.checkedAt,
           checkedBy: check.checkedBy,
+          checkedByName: check.checker?.nama,
         };
       }
     }
@@ -329,6 +338,8 @@ export class AttributeModel {
         notes: string | null;
         isSaved: boolean;
         checkId?: number;
+        checkedAt?: string;
+        checkedByName?: string;
       }> = {};
 
       for (const attr of individuAttrs) {
@@ -339,6 +350,8 @@ export class AttributeModel {
             notes: saved.notes,
             isSaved: true,
             checkId: saved.id,
+            checkedAt: saved.checkedAt ? saved.checkedAt.toISOString() : undefined,
+            checkedByName: saved.checkedByName,
           };
         } else {
           // Aturan default: diasumsikan membawa (is_brought = true)
@@ -373,6 +386,8 @@ export class AttributeModel {
         notes: string | null;
         isSaved: boolean;
         checkId?: number;
+        checkedAt?: string;
+        checkedByName?: string;
       }> = {};
 
       for (const attr of kelompokAttrs) {
@@ -383,6 +398,8 @@ export class AttributeModel {
             notes: saved.notes,
             isSaved: true,
             checkId: saved.id,
+            checkedAt: saved.checkedAt ? saved.checkedAt.toISOString() : undefined,
+            checkedByName: saved.checkedByName,
           };
         } else {
           // Default kelompok: membawa (true)

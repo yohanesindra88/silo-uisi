@@ -151,7 +151,7 @@ export class AttributeController {
       return NextResponse.json(
         {
           success: true,
-          message: "Master atribut berhasil dibuat.",
+          message: "Atribut berhasil ditambahkan.",
           data: newAttribute,
         },
         { status: 201 }
@@ -161,7 +161,7 @@ export class AttributeController {
       return NextResponse.json(
         {
           success: false,
-          message: "Gagal membuat master atribut.",
+          message: "Gagal menambahkan atribut.",
           error: error.message,
         },
         { status: 500 }
@@ -171,14 +171,14 @@ export class AttributeController {
 
   /**
    * PUT /api/attributes/[id]
-   * Admin memperbarui master atribut
+   * Admin memperbarui atribut
    */
   static async updateAttribute(req: Request, id: number) {
     try {
       const user = await getAuthUser(req);
-      if (!user || (user.role !== "admin" && user.role !== "panitia")) {
+      if (!user || user.role !== "admin") {
         return NextResponse.json(
-          { success: false, message: "Akses ditolak." },
+          { success: false, message: "Akses ditolak. Fitur edit atribut hanya dapat diakses oleh Admin." },
           { status: 403 }
         );
       }
@@ -211,7 +211,7 @@ export class AttributeController {
 
   /**
    * DELETE /api/attributes/[id]
-   * Admin menghapus master atribut
+   * Admin menghapus atribut
    */
   static async deleteAttribute(req: Request, id: number) {
     try {
