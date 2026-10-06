@@ -30,6 +30,10 @@ import {
   Save,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ClipboardList,
   Sliders,
   HelpCircle,
@@ -108,6 +112,19 @@ const getTodayInputStr = () => {
   return `${y}-${m}-${d}`;
 };
 
+const getPaginationItems = (current: number, total: number): (number | string)[] => {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+};
+
 export default function AdminAtributPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -172,6 +189,15 @@ export default function AdminAtributPage() {
   const [loadingMonitoring, setLoadingMonitoring] = useState(false);
   const [savingBatch, setSavingBatch] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
+
+  // Pagination Monitoring State (Default 10 item, opsi: 10, 25, 50, 100)
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Reset halaman ke 1 saat filter, pencarian, kelompok, tanggal, sub-tab, atau pageSize berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, monitoringSearch, monitoringGroupId, monitoringDate, monitoringSubTab, pageSize]);
 
   // State Checklist Lokal (bisa diedit admin)
   const [mabaChecksState, setMabaChecksState] = useState<Record<number, Record<number, CheckDetail>>>({});
@@ -839,6 +865,248 @@ export default function AdminAtributPage() {
       return true;
     });
   }, [groupChecksRaw, monitoringGroupId, monitoringSearch]);
+
+  // ==========================================
+  // LOGIKA PAGINATION MONITORING
+  // ==========================================
+  const totalMabaItems = filteredMabaList.length;
+  const totalMabaPages = Math.max(1, Math.ceil(totalMabaItems / pageSize));
+  const activeMabaPage = Math.min(Math.max(1, currentPage), totalMabaPages);
+  const mabaStartIndex = (activeMabaPage - 1) * pageSize;
+  const paginatedMabaList = useMemo(() => {
+    return filteredMabaList.slice(mabaStartIndex, mabaStartIndex + pageSize);
+  }, [filteredMabaList, mabaStartIndex, pageSize]);
+
+  const totalGroupItems = filteredGroupList.length;
+  const totalGroupPages = Math.max(1, Math.ceil(totalGroupItems / pageSize));
+  const activeGroupPage = Math.min(Math.max(1, currentPage), totalGroupPages);
+  const groupStartIndex = (activeGroupPage - 1) * pageSize;
+  const paginatedGroupList = useMemo(() => {
+    return filteredGroupList.slice(groupStartIndex, groupStartIndex + pageSize);
+  }, [filteredGroupList, groupStartIndex, pageSize]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (typeof window !== "undefined") {
+      const el = document.getElementById("monitoringListTop");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
+  const renderPagination = (
+    current: number,
+    totalPages: number,
+    totalItems: number,
+    labelItem: string
+  ) => {
+    if (totalItems === 0) return null;
+
+    const startItem = (current - 1) * pageSize + 1;
+    const endItem = Math.min(current * pageSize, totalItems);
+    const pageItems = getPaginationItems(current, totalPages);
+
+    return (
+      <div
+        style={{
+          marginTop: "16px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "16px",
+          padding: "14px 18px",
+          border: "1px solid rgba(31, 75, 93, 0.08)",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px",
+        }}
+      >
+        {/* Info & Pengaturan Per Halaman */}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "0.8rem", color: "#1F4B5D", fontWeight: 600 }}>
+            Menampilkan <strong style={{ color: "#0F766E", fontWeight: 800 }}>{startItem} - {endItem}</strong> dari{" "}
+            <strong style={{ fontWeight: 800 }}>{totalItems}</strong> {labelItem}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.7)", fontWeight: 600 }}>
+              Per halaman:
+            </span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "4px 10px",
+                borderRadius: "8px",
+                border: "1px solid rgba(31, 75, 93, 0.2)",
+                backgroundColor: "rgba(31, 75, 93, 0.04)",
+                color: "#1F4B5D",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Tombol Navigasi Halaman */}
+        {totalPages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+            {/* Tombol First Page */}
+            <button
+              type="button"
+              disabled={current <= 1}
+              onClick={() => handlePageChange(1)}
+              title="Halaman Pertama"
+              style={{
+                padding: "6px 8px",
+                borderRadius: "8px",
+                border: "1px solid rgba(31, 75, 93, 0.15)",
+                backgroundColor: current <= 1 ? "rgba(31, 75, 93, 0.03)" : "#FFFFFF",
+                color: current <= 1 ? "rgba(31, 75, 93, 0.3)" : "#1F4B5D",
+                cursor: current <= 1 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <ChevronsLeft size={16} />
+            </button>
+
+            {/* Tombol Prev */}
+            <button
+              type="button"
+              disabled={current <= 1}
+              onClick={() => handlePageChange(current - 1)}
+              title="Halaman Sebelumnya"
+              style={{
+                padding: "6px 12px",
+                borderRadius: "8px",
+                border: "1px solid rgba(31, 75, 93, 0.15)",
+                backgroundColor: current <= 1 ? "rgba(31, 75, 93, 0.03)" : "#FFFFFF",
+                color: current <= 1 ? "rgba(31, 75, 93, 0.3)" : "#1F4B5D",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                cursor: current <= 1 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <ChevronLeft size={15} /> Prev
+            </button>
+
+            {/* Nomor Halaman */}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              {pageItems.map((p, idx) => {
+                if (p === "...") {
+                  return (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      style={{
+                        padding: "0 4px",
+                        color: "rgba(31, 75, 93, 0.4)",
+                        fontSize: "0.8rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ...
+                    </span>
+                  );
+                }
+
+                const pageNum = Number(p);
+                const isActive = pageNum === current;
+
+                return (
+                  <button
+                    key={`page-${pageNum}`}
+                    type="button"
+                    onClick={() => handlePageChange(pageNum)}
+                    style={{
+                      minWidth: "32px",
+                      height: "32px",
+                      padding: "0 6px",
+                      borderRadius: "8px",
+                      border: isActive ? "none" : "1px solid rgba(31, 75, 93, 0.15)",
+                      backgroundColor: isActive ? "#0F766E" : "#FFFFFF",
+                      color: isActive ? "#FFFFFF" : "#1F4B5D",
+                      fontSize: "0.8rem",
+                      fontWeight: isActive ? 800 : 600,
+                      cursor: "pointer",
+                      boxShadow: isActive ? "0 2px 6px rgba(15, 118, 110, 0.3)" : "none",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tombol Next */}
+            <button
+              type="button"
+              disabled={current >= totalPages}
+              onClick={() => handlePageChange(current + 1)}
+              title="Halaman Selanjutnya"
+              style={{
+                padding: "6px 12px",
+                borderRadius: "8px",
+                border: "1px solid rgba(31, 75, 93, 0.15)",
+                backgroundColor: current >= totalPages ? "rgba(31, 75, 93, 0.03)" : "#FFFFFF",
+                color: current >= totalPages ? "rgba(31, 75, 93, 0.3)" : "#1F4B5D",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                cursor: current >= totalPages ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                transition: "all 0.15s ease",
+              }}
+            >
+              Next <ChevronRight size={15} />
+            </button>
+
+            {/* Tombol Last Page */}
+            <button
+              type="button"
+              disabled={current >= totalPages}
+              onClick={() => handlePageChange(totalPages)}
+              title="Halaman Terakhir"
+              style={{
+                padding: "6px 8px",
+                borderRadius: "8px",
+                border: "1px solid rgba(31, 75, 93, 0.15)",
+                backgroundColor: current >= totalPages ? "rgba(31, 75, 93, 0.03)" : "#FFFFFF",
+                color: current >= totalPages ? "rgba(31, 75, 93, 0.3)" : "#1F4B5D",
+                cursor: current >= totalPages ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Filter Master Atribut
   const filteredMasterAttributes = useMemo(() => {
@@ -1535,6 +1803,73 @@ export default function AdminAtributPage() {
                 ))}
               </div>
 
+              {/* Anchor Scroll untuk Navigasi Halaman */}
+              <div id="monitoringListTop" />
+
+              {/* Bar Pengaturan Tampilan & Range Data di Bagian Atas */}
+              {((monitoringSubTab === "individu" && filteredMabaList.length > 0) ||
+                (monitoringSubTab === "kelompok" && filteredGroupList.length > 0)) && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    marginBottom: "14px",
+                    padding: "8px 14px",
+                    backgroundColor: "rgba(31, 75, 93, 0.04)",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(31, 75, 93, 0.08)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.78rem", color: "#1F4B5D", fontWeight: 700 }}>
+                    Menampilkan{" "}
+                    <span style={{ color: "#0F766E", fontWeight: 800 }}>
+                      {monitoringSubTab === "individu"
+                        ? `${mabaStartIndex + 1} - ${Math.min(mabaStartIndex + pageSize, totalMabaItems)}`
+                        : `${groupStartIndex + 1} - ${Math.min(groupStartIndex + pageSize, totalGroupItems)}`}
+                    </span>{" "}
+                    dari{" "}
+                    <span style={{ fontWeight: 800 }}>
+                      {monitoringSubTab === "individu" ? `${totalMabaItems} Mahasiswa` : `${totalGroupItems} Kelompok`}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "0.75rem", color: "rgba(31, 75, 93, 0.7)", fontWeight: 600 }}>
+                      Tampilkan per halaman:
+                    </span>
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      {[10, 25, 50, 100].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            setPageSize(size);
+                            setCurrentPage(1);
+                          }}
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            border: pageSize === size ? "none" : "1px solid rgba(31, 75, 93, 0.15)",
+                            backgroundColor: pageSize === size ? "#0F766E" : "#FFFFFF",
+                            color: pageSize === size ? "#FFFFFF" : "#1F4B5D",
+                            fontSize: "0.74rem",
+                            fontWeight: pageSize === size ? 800 : 600,
+                            cursor: "pointer",
+                            boxShadow: pageSize === size ? "0 1px 4px rgba(15, 118, 110, 0.25)" : "none",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {monitoringSubTab === "individu" ? (
             /* ======================================================= */
             /* SUB-TAB INDIVIDU: DAFTAR MAHASISWA & STATUS ATRIBUT      */
@@ -1558,8 +1893,9 @@ export default function AdminAtributPage() {
                 </p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {filteredMabaList.map((maba) => {
+              <div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {paginatedMabaList.map((maba) => {
                   const mabaChecks = mabaChecksState[maba.id] || {};
 
                   return (
@@ -1824,6 +2160,10 @@ export default function AdminAtributPage() {
                     </div>
                   );
                 })}
+                </div>
+
+                {/* Footer Pagination Mahasiswa */}
+                {renderPagination(activeMabaPage, totalMabaPages, totalMabaItems, "mahasiswa")}
               </div>
             )
           ) : (
@@ -1846,8 +2186,9 @@ export default function AdminAtributPage() {
                 </h4>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {filteredGroupList.map((grp) => {
+              <div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {paginatedGroupList.map((grp) => {
                   const grpChecks = groupChecksState[grp.groupId] || {};
 
                   return (
@@ -2017,6 +2358,10 @@ export default function AdminAtributPage() {
                     </div>
                   );
                 })}
+                </div>
+
+                {/* Footer Pagination Kelompok */}
+                {renderPagination(activeGroupPage, totalGroupPages, totalGroupItems, "kelompok")}
               </div>
             )
           )}
